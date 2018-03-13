@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2006
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterTracking", "BetterTracking\BetterTracking.csproj", "{2BEC9AF7-DCD2-4665-81F8-9853959AA436}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BetterTracking.Unity", "BetterTracking.Unity\BetterTracking.Unity.csproj", "{41E325C0-FA09-4DF0-8CD5-E9CCB309FD2D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2BEC9AF7-DCD2-4665-81F8-9853959AA436}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BEC9AF7-DCD2-4665-81F8-9853959AA436}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BEC9AF7-DCD2-4665-81F8-9853959AA436}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BEC9AF7-DCD2-4665-81F8-9853959AA436}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41E325C0-FA09-4DF0-8CD5-E9CCB309FD2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41E325C0-FA09-4DF0-8CD5-E9CCB309FD2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41E325C0-FA09-4DF0-8CD5-E9CCB309FD2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41E325C0-FA09-4DF0-8CD5-E9CCB309FD2D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CB8E6DCE-A5AE-498D-A29E-26427CFFE096}
+	EndGlobalSection
+EndGlobal
