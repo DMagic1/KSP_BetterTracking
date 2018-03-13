@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 1672256631
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: better_tracking_prefabs
+      Dependencies: {}

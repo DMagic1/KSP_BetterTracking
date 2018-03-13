@@ -1,0 +1,80 @@
+ManifestFileVersion: 0
+CRC: 2478422552
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 2f9eed8bac5134fccdc8333a145c43b1
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: a76cc70228b14bd11f4d6de3b45bb48a
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 74
+  Script: {instanceID: 0}
+- Class: 91
+  Script: {instanceID: 0}
+- Class: 95
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 1392445389, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: -765806418, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: 1679637790, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: 708705254, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: 2109663825, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: -1184210157, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: 1297475563, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: 1756429067, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: 1495016603, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: 795088687, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: 368674652, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: -1582228015, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: 1282408397, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: -1929307367, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: -142179781, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: 2095264307, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 114
+  Script: {fileID: 619713579, guid: 7eba39e79049ff14dbe8f25273865bbb, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 128
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+- Class: 222
+  Script: {instanceID: 0}
+- Class: 224
+  Script: {instanceID: 0}
+- Class: 687078895
+  Script: {instanceID: 0}
+Assets:
+- Assets/Prefabs/SortHeader.prefab
+- Assets/Prefabs/SubVessel.prefab
+- Assets/Prefabs/Header.prefab
+- Assets/Prefabs/HeaderGroup.prefab
+- Assets/Prefabs/MoonGroup.prefab
+- Assets/Prefabs/MoonHeader.prefab
+- Assets/Prefabs/Vessel.prefab
+Dependencies: []
