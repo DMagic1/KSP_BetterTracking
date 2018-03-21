@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_Controller - Main tracking station logic controller
 
@@ -49,6 +49,7 @@ namespace BetterTracking
         public static OnWidgetAwake OnWidgetAwake = new OnWidgetAwake();
 
         private bool _widgetAwakeSet;
+        private bool _instantStart;
 
         private SpaceTracking _TrackingStation;
         
@@ -65,7 +66,9 @@ namespace BetterTracking
         private Tracking_Mode _CurrentMode = Tracking_Mode.CelestialBody;
         
         private List<TrackingStationWidget> _TrackedVesselWidgets = new List<TrackingStationWidget>();
+
         private List<Tracking_BodyGroup> _OrderedBodyList = new List<Tracking_BodyGroup>();
+        private List<VesselType> _OrderedTypeList = new List<VesselType>();
 
         private List<Tracking_Group> _TrackingGroups = new List<Tracking_Group>();
 
@@ -168,23 +171,24 @@ namespace BetterTracking
                     yield return null;
             }
 
+            _ListParent = _TrackingStation.listContainer.parent.transform;
+
             FindScrollRect();
 
-            FindCamera();
-
-            FindCorners();
-
+            StartCoroutine(WaitForCamera());
+            
             AdjustUITransforms();
 
             StartCoroutine(AttachSortHeader());
 
             _VesselToggleGroup = Instantiate(_TrackingStation.listToggleGroup);
 
-            _ListParent = _TrackingStation.listContainer.parent.transform;
-
             _OldTrackingList = _TrackingStation.listContainer.gameObject;
 
             _NewTrackingList = Instantiate(_OldTrackingList);
+
+            ReorderableList reorder = _OldTrackingList.transform.parent.gameObject.AddComponent<ReorderableList>();
+            reorder.Init(_NewTrackingList.GetComponent<LayoutGroup>(), _NewTrackingList.GetComponent<RectTransform>());
 
             if (_CurrentMode != Tracking_Mode.Default)
             {
@@ -194,58 +198,48 @@ namespace BetterTracking
             }
 
             _OrderedBodyList = OrderBodies();
+            _OrderedTypeList = OrderTypes();
 
             Tracking_Utils.TrackingLog("Tracking Station Processed");
             
         }
-
-        private IEnumerator AttachSortHeader()
-        {
-            Transform parent = _TrackingStation.listContainer.parent.parent.parent;
-
-            while (Tracking_Loader.SortHeaderPrefab == null)
-                yield return null;
-            
-            //Tracking_Utils.TrackingLog("Starting Sort Header...");
-
-            SortHeader sort = Instantiate(Tracking_Loader.SortHeaderPrefab).GetComponent<SortHeader>();
-            sort.transform.SetParent(parent, false);
-            sort.transform.SetSiblingIndex(2);
-            sort.Initialize(this);
-        }
-
-        private void AdjustUITransforms()
-        {
-            if (_TrackingStation == null)
-                return;
-
-            //Tracking_Utils.TrackingLog("Adjusting UI Transforms...");
-
-            RectTransform listRect = _TrackingStation.listContainer.parent.parent as RectTransform;
-
-            if (listRect != null)
-            {
-                listRect.anchoredPosition = new Vector2(5, -96);
-                listRect.sizeDelta = new Vector2(280, -177);
-            }
-
-            RectTransform headerRect = _TrackingStation.listContainer.parent.parent.parent.GetChild(2) as RectTransform;
-
-            if (headerRect != null)
-            {
-                headerRect.anchoredPosition = new Vector2(5, -72);
-                headerRect.sizeDelta = new Vector2(266, 25);
-            }
-        }
-
+        
         private void FindScrollRect()
         {
             _ScrollView = _TrackingStation.listContainer.GetComponentInParent<ScrollRect>();
+
+            if (_ScrollView == null)
+                Tracking_Utils.TrackingLog("Scroll Rect Not Found");
+            else
+                Tracking_Utils.TrackingLog("Scroll Rect Found");
         }
 
-        private void FindCamera()
+        private IEnumerator WaitForCamera()
         {
-            _CanvasCamera = _TrackingStation.listContainer.GetComponentInParent<Canvas>().worldCamera;
+            while (_CanvasCamera == null)
+            {
+                _CanvasCamera = FindCamera();
+
+                if (_CanvasCamera == null)
+                    Tracking_Utils.TrackingLog("Canvas Camera Not Found");
+                else
+                    Tracking_Utils.TrackingLog("Canvas Camera Found");
+
+                if (_CanvasCamera == null)
+                    yield return null;
+            }
+
+            FindCorners();
+        }
+
+        private Camera FindCamera()
+        {
+            if (_TrackingStation.listContainer.parent != null)
+                return _TrackingStation.listContainer.GetComponentInParent<Canvas>().worldCamera;
+            else if (_NewTrackingList != null && _NewTrackingList.transform.parent != null)
+                return _NewTrackingList.GetComponentInParent<Canvas>().worldCamera;
+
+            return null;
         }
 
         private void FindCorners()
@@ -267,8 +261,49 @@ namespace BetterTracking
             float height = bl.y - y;
 
             _ScrollViewRect = new Rect(x, y, width, height);
+
+            Tracking_Utils.TrackingLog("Detected Vessel List Corners");
         }
-        
+
+        private void AdjustUITransforms()
+        {
+            if (_TrackingStation == null)
+                return;
+
+            RectTransform listRect = _TrackingStation.listContainer.parent.parent as RectTransform;
+
+            if (listRect != null)
+            {
+                listRect.anchoredPosition = new Vector2(5, -96);
+                listRect.sizeDelta = new Vector2(280, -177);
+            }
+
+            RectTransform headerRect = _TrackingStation.listContainer.parent.parent.parent.GetChild(2) as RectTransform;
+
+            if (headerRect != null)
+            {
+                headerRect.anchoredPosition = new Vector2(5, -72);
+                headerRect.sizeDelta = new Vector2(266, 25);
+            }
+
+            Tracking_Utils.TrackingLog("Squishing Sidebar UI Elements");
+        }
+
+        private IEnumerator AttachSortHeader()
+        {
+            Transform parent = _TrackingStation.listContainer.parent.parent.parent;
+
+            while (Tracking_Loader.SortHeaderPrefab == null)
+                yield return null;
+
+            SortHeader sort = Instantiate(Tracking_Loader.SortHeaderPrefab).GetComponent<SortHeader>();
+            sort.transform.SetParent(parent, false);
+            sort.transform.SetSiblingIndex(2);
+            sort.Initialize(this);
+
+            Tracking_Utils.TrackingLog("Sort Header Inserted");
+        }
+
         private void OnWidgetSelected(TrackingStationWidget widget)
         {
             if (_TrackingGroups == null || _TrackingGroups.Count <= 0)
@@ -276,16 +311,12 @@ namespace BetterTracking
 
             if (widget == null)
             {
-                //Tracking_Utils.TrackingLog("Widget Toggle Clicked - Widget Null");
                 return;
             }
             else if (widget.vessel == null)
             {
-                //Tracking_Utils.TrackingLog("Widget Toggle Clicked - Vessel Null");
                 return;
             }
-            //else
-                //Tracking_Utils.TrackingLog("Widget Toggle Clicked: {0}", widget.vessel.vesselName);
 
             for (int i = _TrackingGroups.Count - 1; i >= 0; i--)
             {
@@ -303,9 +334,7 @@ namespace BetterTracking
         {
             if (_widgetAwakeSet || _NewTrackingList == null || _CurrentMode == Tracking_Mode.Default)
                 return;
-
-            //Tracking_Utils.TrackingLog("Tracking Widget Started; Processed List");
-
+            
             _widgetAwakeSet = true;
 
             StartCoroutine(WidgetListReset());
@@ -314,10 +343,13 @@ namespace BetterTracking
         private IEnumerator WidgetListReset()
         {
             yield return new WaitForEndOfFrame();
-
+            
             UpdateScrollRect(_NewTrackingList.transform as RectTransform);
 
             _TrackedVesselWidgets.Clear();
+
+            _OrderedBodyList = OrderBodies();
+            _OrderedTypeList = OrderTypes();
 
             ParseWidgetContainer();
 
@@ -338,7 +370,7 @@ namespace BetterTracking
         {
             int count = _TrackingStation.listContainer.childCount;
 
-            Tracking_Utils.TrackingLog("Processing {0} Vessel Widgets", count);
+            //Tracking_Utils.TrackingLog("Processing {0} Vessel Widgets", count);
 
             //Tracking_Utils.TrackingLog("Widget Parent: {0}", _TrackingStation.listContainer.name);
 
@@ -350,7 +382,6 @@ namespace BetterTracking
                 Transform t = _TrackingStation.listContainer.GetChild(i);
 
                 TrackingStationWidget widget = t.GetComponent<TrackingStationWidget>();
-
 
                 if (widget != null)
                     _TrackedVesselWidgets.Add(widget);
@@ -377,6 +408,8 @@ namespace BetterTracking
             ClearUI();
 
             GenerateUI();
+
+            _instantStart = false;
         }
 
         private List<Tracking_Group> SortCelestialBodies()
@@ -400,7 +433,7 @@ namespace BetterTracking
                     if (_TrackedVesselWidgets[j].vessel.mainBody == body.Body)
                         bodyVessels.Add(_TrackedVesselWidgets[j]);
                 }
-
+                
                 //Tracking_Utils.TrackingLog("Body: {0} With {1} Vessels", Tracking_Utils.LocalizeBodyName(body.Body.displayName), bodyVessels.Count);
 
                 List<Tracking_MoonGroup> moonGroups = new List<Tracking_MoonGroup>();
@@ -420,11 +453,11 @@ namespace BetterTracking
                     //Tracking_Utils.TrackingLog("Moon: {0} With {1} Vessels", Tracking_Utils.LocalizeBodyName(body.Moons[k].displayName), moonVessels.Count);
 
                     if (moonVessels.Count > 0)
-                        moonGroups.Add(new Tracking_MoonGroup() { Moon = body.Moons[k], Vessels = moonVessels });
+                        moonGroups.Add(new Tracking_MoonGroup() { Moon = body.Moons[k], Vessels = SortWidgets(moonVessels) });
                 }
 
                 if (bodyVessels.Count > 0 || moonGroups.Count > 0)
-                    vesselGroups.Add(new Tracking_Group(Tracking_Utils.LocalizeBodyName(body.Body.displayName), Tracking_Persistence.GetBodyPersistence(body.Body.flightGlobalsIndex), bodyVessels, moonGroups, body.Body, VesselType.Unknown, Tracking_Mode.CelestialBody));
+                    vesselGroups.Add(new Tracking_Group(Tracking_Utils.LocalizeBodyName(body.Body.displayName), Tracking_Persistence.GetBodyPersistence(body.Body.flightGlobalsIndex), _instantStart, SortWidgets(bodyVessels), moonGroups, body.Body, VesselType.Unknown, Tracking_Mode.CelestialBody));
             }
 
             return vesselGroups;
@@ -433,55 +466,17 @@ namespace BetterTracking
         private List<Tracking_Group> SortVesselType()
         {
             List<Tracking_Group> vesselGroups = new List<Tracking_Group>();
+
+            int count = _OrderedTypeList.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                Tracking_Group group = VesselTypeGroup(_OrderedTypeList[i]);
+
+                if (group != null)
+                    vesselGroups.Add(group);
+            }
             
-            Tracking_Group group = VesselTypeGroup(VesselType.Ship);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.EVA);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Probe);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Plane);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Lander);
-            if (group != null)
-                vesselGroups.Add(group);
-            
-            group = VesselTypeGroup(VesselType.Station);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Base);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Relay);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Flag);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.SpaceObject);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Debris);
-            if (group != null)
-                vesselGroups.Add(group);
-
-            group = VesselTypeGroup(VesselType.Unknown);
-            if (group != null)
-                vesselGroups.Add(group);
-
             return vesselGroups;
         }
 
@@ -497,10 +492,169 @@ namespace BetterTracking
                     typeVessels.Add(_TrackedVesselWidgets[i]);
             }
 
+            //Tracking_Utils.TrackingLog("Type: {0} With {1} Vessels", type, typeVessels.Count);
+            
             if (typeVessels.Count > 0)
-                return new Tracking_Group(Tracking_Utils.VesselTypeString(type), Tracking_Persistence.GetTypePersistence((int)type), typeVessels, null, null, type, Tracking_Mode.VesselType);
+                return new Tracking_Group(Tracking_Utils.VesselTypeString(type), Tracking_Persistence.GetTypePersistence((int)type), _instantStart, SortWidgets(typeVessels), null, null, type, Tracking_Mode.VesselType);
 
             return null;
+        }
+
+        private List<TrackingStationWidget> SortWidgets(List<TrackingStationWidget> widgets)
+        {
+            List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
+
+            int mode = 0;
+            bool asc = true;
+
+            switch (CurrentMode)
+            {
+                case 0:
+                    mode = BodySortMode;
+                    asc = BodySortOrder;
+                    break;
+                case 1:
+                    mode = TypeSortMode;
+                    asc = TypeSortOrder;
+                    break;
+            }
+            
+            switch (mode)
+            {
+                case 0:
+                    sorted = SortWidgetsTime(widgets, asc);
+                    break;
+                case 1:
+                    sorted = SortWidgetsAlpha(widgets, asc);
+                    break;
+                case 2:
+                    switch (CurrentMode)
+                    {
+                        case 0:
+                            sorted = SortWidgetsType(widgets, asc);
+                            break;
+                        case 1:
+                            sorted = SortWidgetsBody(widgets, asc);
+                            break;
+                    }
+                    break;
+            }
+
+            return sorted;
+        }
+
+        private List<TrackingStationWidget> SortWidgetsTime(List<TrackingStationWidget> widgets, bool asc)
+        {
+            if (asc)
+                return widgets;
+            else
+            {
+                List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
+
+                for (int i = widgets.Count - 1; i >= 0; i--)
+                {
+                    sorted.Add(widgets[i]);
+                }
+
+                return sorted;
+            }         
+        }
+
+        private List<TrackingStationWidget> SortWidgetsAlpha(List<TrackingStationWidget> widgets, bool asc)
+        {
+            widgets.Sort((a, b) => RUIutils.SortAscDescPrimarySecondary(asc, a.vessel.vesselName.CompareTo(b.vessel.vesselName), a.vessel.launchTime.CompareTo(b.vessel.launchTime)));
+            
+            return widgets;
+        }
+
+        private List<TrackingStationWidget> SortWidgetsBody(List<TrackingStationWidget> widgets, bool asc)
+        {
+            List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
+            
+            if (asc)
+            {
+                for (int i = 0; i < _OrderedBodyList.Count; i++)
+                {
+                    Tracking_BodyGroup group = _OrderedBodyList[i];
+
+                    for (int j = 0; j < widgets.Count; j++)
+                    {
+                        if (widgets[j].vessel.mainBody.flightGlobalsIndex == group.Body.flightGlobalsIndex)
+                            sorted.Add(widgets[j]);
+                    }
+
+                    for (int k = 0; k < group.Moons.Count; k++)
+                    {
+                        int index = group.Moons[k].flightGlobalsIndex;
+
+                        for (int l = 0; l < widgets.Count; l++)
+                        {
+                            if (widgets[l].vessel.mainBody.flightGlobalsIndex == index)
+                                sorted.Add(widgets[l]);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int i = _OrderedBodyList.Count - 1; i >= 0; i--)
+                {
+                    Tracking_BodyGroup group = _OrderedBodyList[i];
+
+                    for (int j = 0; j < widgets.Count; j++)
+                    {
+                        if (widgets[j].vessel.mainBody.flightGlobalsIndex == group.Body.flightGlobalsIndex)
+                            sorted.Add(widgets[j]);
+                    }
+
+                    for (int k = 0; k < group.Moons.Count; k++)
+                    {
+                        int index = group.Moons[k].flightGlobalsIndex;
+
+                        for (int l = 0; l < widgets.Count; l++)
+                        {
+                            if (widgets[l].vessel.mainBody.flightGlobalsIndex == index)
+                                sorted.Add(widgets[l]);
+                        }
+                    }
+                }
+            }
+            
+            return sorted;
+        }
+
+        private List<TrackingStationWidget> SortWidgetsType(List<TrackingStationWidget> widgets, bool asc)
+        {
+            List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
+            
+            if (asc)
+            {
+                for (int i = 0; i < Tracking_Persistence.TypeOrderList.Count; i++)
+                {
+                    int index = Tracking_Persistence.TypeOrderList[i];
+
+                    for (int j = 0; j < widgets.Count; j++)
+                    {
+                        if (widgets[j].vessel.vesselType == (VesselType)index)
+                            sorted.Add(widgets[j]);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = Tracking_Persistence.TypeOrderList.Count - 1; i >= 0; i--)
+                {
+                    int index = Tracking_Persistence.TypeOrderList[i];
+
+                    for (int j = widgets.Count - 1; j >= 0; j--)
+                    {
+                        if (widgets[j].vessel.vesselType == (VesselType)index)
+                            sorted.Add(widgets[j]);
+                    }
+                }
+            }
+            
+            return sorted;
         }
 
         private void ClearUI()
@@ -568,8 +722,6 @@ namespace BetterTracking
             GameEvents.OnMapViewFiltersModified.Fire(MapViewFiltering.VesselTypeFilter.All);
 
             ClearUI();
-
-            //StartCoroutine(WidgetListReset());
         }
 
         public void ActivateCelestialSort()
@@ -582,9 +734,7 @@ namespace BetterTracking
             }
 
             _CurrentMode = Tracking_Mode.CelestialBody;
-
-            //_lightAdded = false;
-
+            
             StartCoroutine(WidgetListReset());
         }
 
@@ -598,7 +748,7 @@ namespace BetterTracking
             }
 
             _CurrentMode = Tracking_Mode.VesselType;
-
+            
             StartCoroutine(WidgetListReset());
         }
 
@@ -667,12 +817,106 @@ namespace BetterTracking
 
             bodies.Insert(1, new Tracking_BodyGroup() { Body = Planetarium.fetch.Sun, Moons = new List<CelestialBody>() });
 
-            return bodies;
+            List<Tracking_BodyGroup> ordered = new List<Tracking_BodyGroup>();
+
+            for (int i = 0; i < Tracking_Persistence.BodyOrderList.Count; i++)
+            {
+                for (int j = bodies.Count - 1; j >= 0; j--)
+                {
+                    int index = bodies[j].Body.flightGlobalsIndex;
+
+                    if (index != Tracking_Persistence.BodyOrderList[i])
+                        continue;
+
+                    //Tracking_Utils.TrackingLog("Body: {0} Order Position: {1}", bodies[j].Body.bodyName, i);
+
+                    ordered.Add(bodies[j]);
+                    break;
+                }
+            }
+
+            return ordered;
+        }
+
+        private List<VesselType> OrderTypes()
+        {
+            List<VesselType> types = new List<VesselType>();
+
+            for (int i = 0; i < Tracking_Persistence.TypeOrderList.Count; i++)
+            {
+                for (int j = 13 - 1; j >= 0; j--)
+                {
+                    if (j != Tracking_Persistence.TypeOrderList[i])
+                        continue;
+
+                    types.Add((VesselType)j);
+                    break;
+                }
+            }
+
+            return types;
         }
 
         public int CurrentMode
         {
             get { return (int)_CurrentMode; }
+        }
+
+        public int BodySortMode
+        {
+            get { return Tracking_Persistence.BodyOrderMode; }
+            set
+            {
+                Tracking_Persistence.BodyOrderMode = value;
+
+                _instantStart = true;
+
+                StartCoroutine(WidgetListReset());
+            }
+        }
+
+        public int TypeSortMode
+        {
+            get { return Tracking_Persistence.TypeOrderMode; }
+            set
+            {
+                Tracking_Persistence.TypeOrderMode = value;
+                
+                _instantStart = true;
+
+                StartCoroutine(WidgetListReset());
+            }
+        }
+
+        public bool BodySortOrder
+        {
+            get { return Tracking_Persistence.BodyAscOrder; }
+            set
+            {
+                Tracking_Persistence.BodyAscOrder = value;
+
+                _instantStart = true;
+
+                StartCoroutine(WidgetListReset());
+            }
+        }
+
+        public bool TypeSortOrder
+        {
+            get { return Tracking_Persistence.TypeAscOrder; }
+            set
+            {
+                Tracking_Persistence.TypeAscOrder = value;
+
+                _instantStart = true;
+
+                StartCoroutine(WidgetListReset());
+            }
+        }
+
+        public Transform DropDownParent
+        {
+            get { return _ListParent.parent; }
         }
 
         public void SortBody(bool isOn)
