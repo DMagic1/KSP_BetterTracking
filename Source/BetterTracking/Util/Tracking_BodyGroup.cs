@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_BodyGroup - Storage struct for celestial body and its moons
 

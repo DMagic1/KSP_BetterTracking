@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 TextHandler - Script for converting Text element to TextMesh Pro
 

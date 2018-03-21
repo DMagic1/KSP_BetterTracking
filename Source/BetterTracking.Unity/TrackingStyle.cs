@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 TrackingStyle - Script for applying UI style elements
 
@@ -40,6 +40,8 @@ namespace BetterTracking.Unity
             Toggle,
             IconBackground,
             Button,
+            Window,
+            Background,
         }
 
         [SerializeField]

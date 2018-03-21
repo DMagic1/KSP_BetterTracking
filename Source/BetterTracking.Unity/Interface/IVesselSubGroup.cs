@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 IVesselSubGroup - Interface for subgroup element
 
@@ -34,6 +34,8 @@ namespace BetterTracking.Unity.Interface
     public interface IVesselSubGroup
     {
         bool StartOn { get; set; }
+
+        bool Instant { get; }
 
         ISubHeaderItem SubHeader { get; }
 

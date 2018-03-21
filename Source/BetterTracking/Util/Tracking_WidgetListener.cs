@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_WidgetListener - Listener script attached to tracking station vessel widget prefab
 

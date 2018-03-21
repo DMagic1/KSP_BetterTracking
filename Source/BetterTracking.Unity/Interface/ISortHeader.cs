@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 ISortHeader - Interface for sort button UI element
 
@@ -27,11 +27,23 @@ THE SOFTWARE.
 */
 #endregion
 
+using UnityEngine;
+
 namespace BetterTracking.Unity.Interface
 {
     public interface ISortHeader
     {
         int CurrentMode { get; }
+
+        int BodySortMode { get; set; }
+
+        int TypeSortMode { get; set; }
+
+        bool BodySortOrder { get; set; }
+
+        bool TypeSortOrder { get; set; }
+
+        Transform DropDownParent { get; }
 
         void SortBody(bool isOn);
 

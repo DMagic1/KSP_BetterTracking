@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 ISubHeaderItem - Interface for sub header element
 
@@ -39,6 +39,6 @@ namespace BetterTracking.Unity.Interface
 
         GameObject HeaderImage { get; }
 
-        void Update();
+        void Update(bool dragging);
     }
 }

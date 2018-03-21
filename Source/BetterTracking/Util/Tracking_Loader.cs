@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_Loader - UI loader script
 
@@ -256,8 +256,14 @@ namespace BetterTracking
                     style.setImage(_backgroundSprite);
                     break;
                 case TrackingStyle.StyleTypes.Button:
-                    style.setButton(skin.button.normal.background, skin.button.highlight.background, skin.button.active.background, skin.button.disabled.background);
+                    style.setButton(_normalSprite, _hoverSprite, _activeSprite, _inactiveSprite);
                         break;
+                case TrackingStyle.StyleTypes.Window:
+                    style.setImage(skin.window.normal.background);
+                    break;
+                case TrackingStyle.StyleTypes.Background:
+                    style.setImage(skin.box.normal.background);
+                    break;
             }
         }
     }

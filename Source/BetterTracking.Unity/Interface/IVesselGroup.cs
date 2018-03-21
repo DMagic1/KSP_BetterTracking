@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 IVesselGroup - Interface for primary group element
 
@@ -35,10 +35,18 @@ namespace BetterTracking.Unity.Interface
     {
         bool StartOn { get; set; }
 
+        bool Instant { get; }
+
+        int Index { get; }
+
+        float MasterScale { get; }
+
         IHeaderItem Header { get; }
 
         IList<IVesselItem> Vessels { get; }
 
         IList<IVesselSubGroup> SubGroups { get; }
+
+        void UpdatePosition(int order, int old);
     }
 }
