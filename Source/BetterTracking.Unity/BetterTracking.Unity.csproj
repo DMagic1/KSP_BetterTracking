@@ -41,6 +41,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\ReorderableList.cs" />
+    <Compile Include="Extensions\ReorderableListContent.cs" />
+    <Compile Include="Extensions\ReorderableListElement.cs" />
     <Compile Include="HeaderItem.cs" />
     <Compile Include="Interface\IHeaderItem.cs" />
     <Compile Include="Interface\ISortHeader.cs" />
@@ -48,7 +51,8 @@
     <Compile Include="Interface\IVesselGroup.cs" />
     <Compile Include="Interface\IVesselItem.cs" />
     <Compile Include="Interface\IVesselSubGroup.cs" />
-    <Compile Include="ScalableVerticalLayoutGroup.cs" />
+    <Compile Include="Extensions\ScalableVerticalLayoutGroup.cs" />
+    <Compile Include="SortDropDown.cs" />
     <Compile Include="SortHeader.cs" />
     <Compile Include="SubHeaderItem.cs" />
     <Compile Include="TextHandler.cs" />
