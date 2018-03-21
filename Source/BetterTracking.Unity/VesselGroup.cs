@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 VesselGroup - Vessel group UI element
 
@@ -60,6 +60,31 @@ namespace BetterTracking.Unity
 
         private Coroutine _animRoutine;
 
+        private bool _initialized;
+        private HeaderItem _header;
+        private float _scale;
+        private int _index;
+
+        public bool Initialized
+        {
+            get { return _initialized; }
+        }
+
+        public HeaderItem Header
+        {
+            get { return _header; }
+        }
+
+        public int Index
+        {
+            get { return _index; }
+        }
+
+        public float Scale
+        {
+            get { return _scale; }
+        }
+        
         private void Awake()
         {
             _anim = GetComponent<Animator>();
@@ -73,6 +98,8 @@ namespace BetterTracking.Unity
             //Debug.Log("[BTK] Initialize Vessel Group...");
 
             _groupInterface = group;
+            _scale = group.MasterScale;
+            _index = group.Index;
 
             ClearUI();
 
@@ -83,7 +110,10 @@ namespace BetterTracking.Unity
             AddVessels(group.Vessels);
 
             if (_anim != null)
+            {
                 _anim.SetBool("open", group.StartOn);
+                _anim.SetBool("instant", group.Instant && group.StartOn);
+            }
 
             if (_animRoutine != null)
             {
@@ -94,6 +124,8 @@ namespace BetterTracking.Unity
             _animating = false;
 
             _animRoutine = StartCoroutine(WaitForExpand());
+
+            _initialized = true;
         }
 
         private void ClearUI()
@@ -112,9 +144,9 @@ namespace BetterTracking.Unity
             if (m_HeaderTransform == null || m_HeaderPrefab == null || header == null)
                 return;
 
-            HeaderItem obj = Instantiate(m_HeaderPrefab);
-            obj.transform.SetParent(m_HeaderTransform, false);
-            obj.Initialize(header, this, _groupInterface.StartOn);
+            _header = Instantiate(m_HeaderPrefab);
+            _header.transform.SetParent(m_HeaderTransform, false);
+            _header.Initialize(header, this, _groupInterface.StartOn);
         }
 
         private void AddSubGroups(IList<IVesselSubGroup> subGroups)
@@ -137,7 +169,7 @@ namespace BetterTracking.Unity
 
             VesselSubGroup obj = Instantiate(m_SubGroupPrefab);
             obj.transform.SetParent(m_SubGroupTransform, false);
-            obj.Initialize(subGroup, last);
+            obj.Initialize(subGroup, this, last);
         }
 
         private void AddVessels(IList<IVesselItem> vessels)
@@ -167,10 +199,19 @@ namespace BetterTracking.Unity
             _vesselList.Add(obj);
         }
 
+        public void UpdateOrder(int order, int old_index)
+        {
+            if (_groupInterface != null)
+                _groupInterface.UpdatePosition(order, old_index);
+        }
+
         public void ToggleGroup(bool isOn)
         {
             if (_anim != null)
+            {
                 _anim.SetBool("open", isOn);
+                _anim.SetBool("instant", false);
+            }
 
             if (_groupInterface != null)
                 _groupInterface.StartOn = isOn;

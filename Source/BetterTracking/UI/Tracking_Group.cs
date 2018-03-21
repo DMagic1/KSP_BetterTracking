@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_Group - UI Interface for primary tracking station group
 
@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 using System.Collections.Generic;
 using BetterTracking.Unity.Interface;
+using KSP.UI;
 using KSP.UI.Screens;
 
 namespace BetterTracking
@@ -38,16 +39,18 @@ namespace BetterTracking
         private Tracking_Header _header;
         private string _title;
         private bool _isOpen;
+        private bool _instant;
         private List<IVesselItem> _vessels = new List<IVesselItem>();
         private List<IVesselSubGroup> _subGroups = new List<IVesselSubGroup>();
         private Tracking_Mode _mode;
         private CelestialBody _body;
         private VesselType _type;
 
-        public Tracking_Group(string title, bool isOpen, List<TrackingStationWidget> vessels, List<Tracking_MoonGroup> subGroups, CelestialBody body, VesselType type, Tracking_Mode mode)
+        public Tracking_Group(string title, bool isOpen, bool instant, List<TrackingStationWidget> vessels, List<Tracking_MoonGroup> subGroups, CelestialBody body, VesselType type, Tracking_Mode mode)
         {
             _title = title;
             _isOpen = isOpen;
+            _instant = instant;
             _mode = mode;
             _body = body;
             _type = type;
@@ -89,7 +92,7 @@ namespace BetterTracking
 
         private void AddSubGroup(Tracking_MoonGroup subGroup)
         {
-            Tracking_SubGroup sub = new Tracking_SubGroup(Tracking_Utils.LocalizeBodyName(subGroup.Moon.displayName), Tracking_Persistence.GetBodyPersistence(subGroup.Moon.flightGlobalsIndex), subGroup.Vessels, subGroup.Moon, _mode);
+            Tracking_SubGroup sub = new Tracking_SubGroup(Tracking_Utils.LocalizeBodyName(subGroup.Moon.displayName), Tracking_Persistence.GetBodyPersistence(subGroup.Moon.flightGlobalsIndex), _instant, subGroup.Vessels, subGroup.Moon, _mode);
 
             _subGroups.Add(sub);
         }
@@ -129,7 +132,22 @@ namespace BetterTracking
 
             return null;
         }
-        
+
+        public void UpdatePosition(int order, int old)
+        {
+            switch(_mode)
+            {
+                case Tracking_Mode.CelestialBody:
+                    int index = _body == null ? 100 : _body.flightGlobalsIndex;
+
+                    Tracking_Persistence.SetBodyOrder(index, order, old);
+                    break;
+                case Tracking_Mode.VesselType:
+                    Tracking_Persistence.SetTypeOrder((int)_type, order, old);
+                    break;
+            }
+        }
+
         public IHeaderItem Header
         {
             get { return _header; }
@@ -163,6 +181,32 @@ namespace BetterTracking
                         break;
                 }
             }
+        }
+
+        public bool Instant
+        {
+            get { return _instant; }
+        }
+
+        public int Index
+        {
+            get
+            {
+                switch (_mode)
+                {
+                    case Tracking_Mode.CelestialBody:
+                        return _body == null ? 100 : _body.flightGlobalsIndex;
+                    case Tracking_Mode.VesselType:
+                        return (int)_type;
+                }
+
+                return 100;
+            }
+        }
+
+        public float MasterScale
+        {
+            get { return UIMasterController.Instance.uiScale; }
         }
     }
 }
