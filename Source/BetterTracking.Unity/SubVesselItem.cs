@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 SubVesselItem - Sub vessel UI element
 
@@ -56,6 +56,18 @@ namespace BetterTracking.Unity
 
         private IVesselItem _vesselInterface;
 
+        private void Awake()
+        {
+            if (m_Toggle != null)
+                m_Toggle.onValueChanged.AddListener(new UnityEngine.Events.UnityAction<bool>(OnVesselToggle));
+        }
+
+        private void OnDestroy()
+        {
+            if (m_Toggle != null)
+                m_Toggle.onValueChanged.RemoveAllListeners();
+        }
+
         public void Initialize(IVesselItem vessel, bool last, bool final)
         {
             if (vessel == null)
@@ -91,12 +103,13 @@ namespace BetterTracking.Unity
             if (m_Toggle == null)
                 return;
 
-            bool on = m_Toggle.isOn;
+            m_Toggle.onValueChanged.RemoveAllListeners();
 
             m_Toggle.group.SetAllTogglesOff();
 
-            if (!on)
-                m_Toggle.isOn = true;
+            m_Toggle.isOn = true;
+
+            m_Toggle.onValueChanged.AddListener(new UnityEngine.Events.UnityAction<bool>(OnVesselToggle));
         }
 
         private void AssignVesselSprite(GameObject obj)

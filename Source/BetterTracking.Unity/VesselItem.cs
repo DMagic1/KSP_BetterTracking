@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 VesselItem - Vessel UI element
 
@@ -51,9 +51,20 @@ namespace BetterTracking.Unity
         private Sprite m_DoubleConnector = null;
         [SerializeField]
         private Toggle m_Toggle = null;
-
-        //private bool _selfClick;
+        
         private IVesselItem _vesselInterface;
+
+        private void Awake()
+        {
+            if (m_Toggle != null)
+                m_Toggle.onValueChanged.AddListener(new UnityEngine.Events.UnityAction<bool>(OnVesselToggle));
+        }
+
+        private void OnDestroy()
+        {
+            if (m_Toggle != null)
+                m_Toggle.onValueChanged.RemoveAllListeners();
+        }
 
         public void Initialize(IVesselItem vessel, bool last)
         {
@@ -73,10 +84,7 @@ namespace BetterTracking.Unity
 
             if (m_InfoText != null)
                 m_InfoText.OnTextUpdate.Invoke(vessel.VesselInfo);
-
-            //if (m_VesselIcon != null)
-            //    m_VesselIcon.sprite = vessel.VesselIcon;
-
+            
             if (m_ConnectorIcon != null)
                 m_ConnectorIcon.sprite = last ? m_EndConnector : m_DoubleConnector;
 
@@ -87,15 +95,16 @@ namespace BetterTracking.Unity
 
         public void SelectVessel()
         {
-            if (m_Toggle == null)// || _selfClick)
+            if (m_Toggle == null)
                 return;
-
-            bool on = m_Toggle.isOn;
+            
+            m_Toggle.onValueChanged.RemoveAllListeners();
 
             m_Toggle.group.SetAllTogglesOff();
 
-            if (!on)
-                m_Toggle.isOn = true;
+            m_Toggle.isOn = true;
+
+            m_Toggle.onValueChanged.AddListener(new UnityEngine.Events.UnityAction<bool>(OnVesselToggle));
         }
         
         private void AssignVesselSprite(GameObject obj)
@@ -110,17 +119,9 @@ namespace BetterTracking.Unity
         {
             if (_vesselInterface == null)
                 return;
-
-            //_selfClick = true;
-
+            
             if (isOn)
-            {
                 _vesselInterface.OnToggle(isOn);
-                //Debug.Log("[BTK] Toggle On: " + _vesselInterface.VesselName);
-            }
-            //else
-                //Debug.Log("[BTK] Toggle Off " + _vesselInterface.VesselName);
-            //_selfClick = false;
         }
 
         public void VesselEdit()
