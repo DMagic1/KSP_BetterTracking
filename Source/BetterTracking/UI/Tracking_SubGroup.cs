@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_SubGroup - UI Interface for sub group
 
@@ -38,15 +38,17 @@ namespace BetterTracking
         private ISubHeaderItem _header;
         private string _title;
         private bool _isOpen;
+        private bool _instant;
         private int _vesselCount;
         private List<IVesselItem> _vessels = new List<IVesselItem>();
         private Tracking_Mode _mode;
         private CelestialBody _body;
 
-        public Tracking_SubGroup(string title, bool isOpen, List<TrackingStationWidget> vessels, CelestialBody body, Tracking_Mode mode)
+        public Tracking_SubGroup(string title, bool isOpen, bool instant, List<TrackingStationWidget> vessels, CelestialBody body, Tracking_Mode mode)
         {
             _title = title;
             _isOpen = isOpen;
+            _instant = instant;
             _vesselCount = vessels.Count;
             _body = body;
             _mode = mode;
@@ -114,6 +116,11 @@ namespace BetterTracking
                         break;
                 }
             }
+        }
+
+        public bool Instant
+        {
+            get { return _instant; }
         }
     }
 }

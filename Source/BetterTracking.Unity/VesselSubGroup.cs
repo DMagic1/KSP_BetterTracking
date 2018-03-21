@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 VesselSubGroup - Sub group UI element
 
@@ -54,6 +54,7 @@ namespace BetterTracking.Unity
 
         private bool _final;
 
+        private VesselGroup _parent;
         private IVesselSubGroup _groupInterface;
 
         private Coroutine _animRoutine;
@@ -82,13 +83,14 @@ namespace BetterTracking.Unity
 
             _animRoutine = StartCoroutine(WaitForExpand());
         }
-        
-        public void Initialize(IVesselSubGroup group, bool last)
+
+        public void Initialize(IVesselSubGroup group, VesselGroup parent, bool last)
         {
             if (group == null)
                 return;
 
             _groupInterface = group;
+            _parent = parent;
 
             _final = last;
 
@@ -101,7 +103,10 @@ namespace BetterTracking.Unity
             //Debug.Log("[BTK] Sub Group Initialize: " + group.StartOn);
 
             if (_anim != null)
+            {
                 _anim.SetBool("open", group.StartOn);
+                _anim.SetBool("instant", group.Instant && group.StartOn);
+            }
 
             if (_animRoutine != null)
             {
@@ -133,7 +138,7 @@ namespace BetterTracking.Unity
             SubHeaderItem obj = Instantiate(m_HeaderPrefab);
             obj.transform.SetParent(m_HeaderTransform, false);
             obj.transform.SetAsFirstSibling();
-            obj.Initialize(header, this, _final, _groupInterface.StartOn);
+            obj.Initialize(header, this, _parent, _final, _groupInterface.StartOn);
         }
 
         private void AddVessels(IList<IVesselItem> vessels)
@@ -166,7 +171,10 @@ namespace BetterTracking.Unity
         public void ToggleGroup(bool isOn)
         {
             if (_anim != null)
+            {
                 _anim.SetBool("open", isOn);
+                _anim.SetBool("instant", false);
+            }
 
             if (_groupInterface != null)
                 _groupInterface.StartOn = isOn;
