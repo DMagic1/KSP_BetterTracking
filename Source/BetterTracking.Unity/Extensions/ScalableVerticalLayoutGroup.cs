@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 ScalableVerticalLayoutGroup - Customized vertical layout group to support scaling animations
 
