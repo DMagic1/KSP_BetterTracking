@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_Header - UI Interface for group header element
 
@@ -41,6 +41,9 @@ namespace BetterTracking
         private GameObject _headerImage;
         private RectTransform _headerRect;
 
+        private bool _pushedForward;
+        private float _cachedZ;
+
         public Tracking_Header(string title, int vesselCount, int moonCount, GameObject obj, int mode)
         {
             _title = title;
@@ -73,8 +76,33 @@ namespace BetterTracking
             get { return _headerImage; }
         }
 
-        public void Update()
+        public void Update(bool dragging)
         {
+            if (dragging)
+            {
+                if (!_pushedForward)
+                {
+                    _pushedForward = true;
+
+                    _cachedZ = _headerImage.transform.position.z;
+
+                    _headerImage.transform.position = new Vector3(
+                        _headerImage.transform.position.x, _headerImage.transform.position.y, _cachedZ - 30);
+                }
+
+                if (!_headerImage.activeSelf)
+                    _headerImage.SetActive(true);
+
+                return;
+            }
+            else if (_pushedForward)
+            {
+                _pushedForward = false;
+                
+                _headerImage.transform.position = new Vector3(
+                    _headerImage.transform.position.x, _headerImage.transform.position.y, _cachedZ);
+            }
+
             if (_mode > 0 || _headerRect == null || Tracking_Controller.Instance == null)
                 return;
 

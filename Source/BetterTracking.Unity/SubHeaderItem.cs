@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 SubHeaderItem - Sub header UI element
 
@@ -42,8 +42,6 @@ namespace BetterTracking.Unity
         [SerializeField]
         private Transform m_HeaderIconTransform = null;
         [SerializeField]
-        private Image m_HeaderIcon = null;
-        [SerializeField]
         private Image m_ConnectorIcon = null;
         [SerializeField]
         private Sprite m_EndConnector = null;
@@ -54,15 +52,17 @@ namespace BetterTracking.Unity
 
         private ISubHeaderItem _headerInterface;
         private VesselSubGroup _parent;
+        private VesselGroup _grandParent;
 
         private bool _loaded;
 
-        public void Initialize(ISubHeaderItem header, VesselSubGroup group, bool last, bool startOn)
+        public void Initialize(ISubHeaderItem header, VesselSubGroup group, VesselGroup grand, bool last, bool startOn)
         {
             if (header == null || group == null)
                 return;
 
             _parent = group;
+            _grandParent = grand;
 
             _headerInterface = header;
 
@@ -101,8 +101,8 @@ namespace BetterTracking.Unity
 
         private void Update()
         {
-            if (_headerInterface != null)
-                _headerInterface.Update();
+            if (_headerInterface != null && _grandParent != null && _grandParent.Header != null)
+                _headerInterface.Update(_grandParent.Header.Dragging);
         }
     }
 }

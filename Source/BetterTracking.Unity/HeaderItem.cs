@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 HeaderItem - Header UI element
 
@@ -42,14 +42,31 @@ namespace BetterTracking.Unity
         [SerializeField]
         private Transform m_HeaderIconTransform = null;
         [SerializeField]
-        private Image m_HeaderIcon = null;
-        [SerializeField]
         private Toggle m_HeaderToggle = null;
+        [SerializeField]
+        private GameObject m_DragHandle = null;
 
         private IHeaderItem _headerInterface;
         private VesselGroup _parent;
-        
+
+        private bool _dragging;
         private bool _loaded;
+
+        public GameObject DragHandle
+        {
+            get { return m_DragHandle; }
+        }
+
+        public VesselGroup Parent
+        {
+            get { return _parent; }
+        }
+
+        public bool Dragging
+        {
+            get { return _dragging; }
+            set { _dragging = value; }
+        }
 
         public void Initialize(IHeaderItem header, VesselGroup group, bool startOn)
         {
@@ -90,10 +107,16 @@ namespace BetterTracking.Unity
             _parent.ToggleGroup(isOn);
         }
 
+        public void UpdatePosition(int order, int old_index)
+        {
+            if (_parent != null)
+                _parent.UpdateOrder(order, old_index);
+        }
+
         private void Update()
         {
             if (_headerInterface != null)
-                _headerInterface.Update();
+                _headerInterface.Update(_dragging);
         }
     }
 }
