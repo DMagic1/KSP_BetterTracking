@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 Tracking_Utils - Utilities class
 
@@ -142,52 +142,7 @@ namespace BetterTracking
 
             return null;
         }
-
-        public static void LogPrefab(Transform prefab, int spaces)
-        {
-            RectTransform rect = prefab as RectTransform;
-
-            if (rect == null)
-            {
-                for (int i = 0; i < prefab.childCount; i++)
-                {
-                    LogPrefab(prefab.GetChild(i), spaces + 5);
-                }
-
-                return;
-            }
-
-            TrackingLog("{0}Prefab Element: {1}\n{0}Anchored Position: {2:N2}\n{0}Size Delta: {3:N2}\n{0}Pivot: {4:N2}\n{0}Anchor Min: {5:N3}\n{0}Anchor Max: {6:N3}"
-                , Dashes(spaces), rect.name, rect.anchoredPosition, rect.sizeDelta, rect.pivot, rect.anchorMin, rect.anchorMax);
-
-            TextMeshProUGUI tmp = rect.GetComponent<TextMeshProUGUI>();
-
-            if (tmp != null)
-            {
-                TrackingLog("{0}Text Mesh Pro Elements: {1}\n{0}Font Color: {2}\n{0}Font Size: {3:N2}\n{0}Font Alignment: {4}\n{0}Font Style: {5}"
-                    , Dashes(spaces), rect.name, tmp.color, tmp.fontSize, tmp.alignment, tmp.fontStyle);
-            }
-
-            for (int i = 0; i < prefab.childCount; i++)
-            {
-                LogPrefab(prefab.GetChild(i), spaces + 5);
-            }
-        }
-
-        private static string Dashes(int count)
-        {
-            string s = "";
-
-            for (int i = 0; i < count; i++)
-            {
-                s += "-";
-            }
-
-            s += ">";
-
-            return s;
-        }
-
+        
         public static string ConcatDictionary(Dictionary<int, bool> values)
         {
             int count = values.Count;
@@ -210,6 +165,30 @@ namespace BetterTracking
             }
 
             //TrackingLog("Save Dictionary: {0}", sb.ToString());
+
+            return sb.ToStringAndRelease();
+        }
+
+        public static string ConcatList(List<int> list)
+        {
+            int count = list.Count;
+
+            StringBuilder sb = StringBuilderCache.Acquire();
+
+            for (int i = 0; i < count; i++)
+            {
+                sb.AppendFormat("{0},", list[i]);
+
+                //TrackingLog("Order List: {0} - Value: {1}", i, list[i]);
+            }
+            
+            if (sb.Length > 1)
+            {
+                if (sb[sb.Length - 1] == ',')
+                    sb.Length -= 1;
+            }
+
+            //TrackingLog("Save List: {0}", sb.ToString());
 
             return sb.ToStringAndRelease();
         }
@@ -238,6 +217,30 @@ namespace BetterTracking
             }
 
             return dict;
+        }
+
+        public static List<int> ParseList(string text)
+        {
+            List<int> list = new List<int>();
+
+            string[] splits = text.Split(',');
+
+            if (splits == null)
+                return null;
+
+            int count = splits.Length;
+
+            for (int i = 0; i < count; i++)
+            {
+                int val = 0;
+
+                if (!int.TryParse(splits[i], out val))
+                    return null;
+
+                list.Add(val);
+            }
+
+            return list;
         }
 
         public static string VesselTypeString(VesselType type)
@@ -285,6 +288,9 @@ namespace BetterTracking
         /// <param name="camera">Camera.</param>
         private static int CountCornersVisibleFrom(this RectTransform rectTransform, Camera camera, Rect view)
         {
+            if (camera == null)
+                return 4;
+
             Vector3[] objectCorners = new Vector3[4];
             rectTransform.GetWorldCorners(objectCorners);
 
