@@ -1,7 +1,7 @@
 ﻿#region License
 /*The MIT License (MIT)
 
-One Window
+Better Tracking
 
 SortHeader - Sort button UI element
 
@@ -43,14 +43,41 @@ namespace BetterTracking.Unity
         private Toggle m_CustomToggle = null;
         [SerializeField]
         private Toggle m_DefaultToggle = null;
+        [SerializeField]
+        private SortDropDown m_SortPrefab = null;
+        [SerializeField]
+        private Transform m_DrowDownAnchor = null;
+        [SerializeField]
+        private Image m_SortOrderImage = null;
+        [SerializeField]
+        private Image m_SortModeImage = null;
+        [SerializeField]
+        private Sprite m_SortAscIcon = null;
+        [SerializeField]
+        private Sprite m_SortDescIcon = null;
+        [SerializeField]
+        private Toggle m_SortToggle = null;
+        [SerializeField]
+        private GameObject m_SortOrderButton = null;
 
+        public Sprite m_TimerAscIcon = null;
+        public Sprite m_TimerDescIcon = null;
+        public Sprite m_AlphaAscIcon = null;
+        public Sprite m_AlphaDescIcon = null;
+        public Sprite m_BodySortIcon = null;
+        public Sprite m_TypeSortIcon = null;
+        
         private ISortHeader _sortInterface;
+        private Transform _dropDownParent;
+        private SortDropDown _dropDown;
 
         private bool _loaded;
-
+        
         public void Initialize(ISortHeader sort)
         {
             _sortInterface = sort;
+
+            _dropDownParent = sort.DropDownParent;
 
             switch(sort.CurrentMode)
             {
@@ -72,6 +99,8 @@ namespace BetterTracking.Unity
                     break;
             }
 
+            UpdateSortButton();
+
             _loaded = true;
         }
 
@@ -82,6 +111,8 @@ namespace BetterTracking.Unity
 
             if (isOn && _sortInterface != null)
                 _sortInterface.SortBody(isOn);
+
+            UpdateSortButton();
         }
 
         public void SortType(bool isOn)
@@ -91,6 +122,8 @@ namespace BetterTracking.Unity
 
             if (isOn && _sortInterface != null)
                 _sortInterface.SortType(isOn);
+
+            UpdateSortButton();
         }
 
         public void SortCustom(bool isOn)
@@ -100,7 +133,10 @@ namespace BetterTracking.Unity
 
             if (isOn && _sortInterface != null)
                 _sortInterface.SortCustom(isOn);
+
+            UpdateSortButton();
         }
+
         public void SortDefault(bool isOn)
         {
             if (!_loaded)
@@ -108,6 +144,143 @@ namespace BetterTracking.Unity
 
             if (isOn && _sortInterface != null)
                 _sortInterface.SortDefault(isOn);
+
+            UpdateSortButton();
+        }
+
+        private void UpdateSortButton()
+        {
+            if (_sortInterface == null)
+                return;
+
+            if (_sortInterface.CurrentMode == 3)
+            {
+                if (m_SortOrderButton != null)
+                    m_SortOrderButton.SetActive(false);
+
+                if (m_SortToggle != null)
+                    m_SortToggle.gameObject.SetActive(false);
+
+                return;
+            }
+            else
+            {
+                if (m_SortOrderButton != null && !m_SortOrderButton.activeSelf)
+                    m_SortOrderButton.SetActive(true);
+
+                if (m_SortToggle != null && !m_SortToggle.gameObject.activeSelf)
+                    m_SortToggle.gameObject.SetActive(true);
+            }
+
+            if (m_SortModeImage != null && m_SortOrderImage != null)
+            {
+                switch (_sortInterface.CurrentMode)
+                {
+                    case 0:
+                        switch (_sortInterface.BodySortMode)
+                        {
+                            case 0:
+                                m_SortModeImage.sprite = _sortInterface.BodySortOrder ? m_TimerAscIcon : m_TimerDescIcon;
+                                break;
+                            case 1:
+                                m_SortModeImage.sprite = _sortInterface.BodySortOrder ? m_AlphaAscIcon : m_AlphaDescIcon;
+                                break;
+                            case 2:
+                                m_SortModeImage.sprite = m_TypeSortIcon;
+                                break;
+                        }
+
+                        m_SortOrderImage.sprite = _sortInterface.BodySortOrder ? m_SortAscIcon : m_SortDescIcon;
+
+                        break;
+                    case 1:
+                        switch (_sortInterface.TypeSortMode)
+                        {
+                            case 0:
+                                m_SortModeImage.sprite = _sortInterface.TypeSortOrder ? m_TimerAscIcon : m_TimerDescIcon;
+                                break;
+                            case 1:
+                                m_SortModeImage.sprite = _sortInterface.TypeSortOrder ? m_AlphaAscIcon : m_AlphaDescIcon;
+                                break;
+                            case 2:
+                                m_SortModeImage.sprite = m_BodySortIcon;
+                                break;
+                        }
+
+                        m_SortOrderImage.sprite = _sortInterface.TypeSortOrder ? m_SortAscIcon : m_SortDescIcon;
+
+                        break;
+                }
+            }
+        }
+
+        public void ToggleSortOrder()
+        {
+            if (_sortInterface == null)
+                return;
+
+            switch (_sortInterface.CurrentMode)
+            {
+                case 0:
+                    _sortInterface.BodySortOrder = !_sortInterface.BodySortOrder;
+                    break;
+                case 1:
+                    _sortInterface.TypeSortOrder = !_sortInterface.TypeSortOrder;
+                    break;
+            }
+
+            UpdateSortButton();
+        }
+
+        public void ToggleSortMenu(bool isOn)
+        {
+            if (isOn)
+            {
+                if (_dropDown != null)
+                {
+                    _dropDown.gameObject.SetActive(false);
+                    DestroyImmediate(_dropDown.gameObject);
+                    _dropDown = null;
+                }
+
+                OpenSortMenu();
+            }
+            else
+                CloseSortMenu();
+        }
+
+        public void OpenSortMenu()
+        {
+            if (m_SortPrefab == null || m_DrowDownAnchor == null || _dropDownParent == null)
+                return;
+            
+            _dropDown = Instantiate(m_SortPrefab);
+            _dropDown.gameObject.SetActive(true);
+
+            _dropDown.transform.SetParent(m_DrowDownAnchor, false);
+
+            _dropDown.Initialize(_sortInterface, this);
+
+            _dropDown.transform.SetParent(_dropDownParent, true);
+        }
+
+        public void CloseSortMenu()
+        {
+            if (_dropDown != null)
+            {
+                _dropDown.gameObject.SetActive(false);
+                Destroy(_dropDown.gameObject);
+                _dropDown = null;
+            }
+
+            UpdateSortButton();
+
+            _loaded = false;
+
+            if (m_SortToggle != null)
+                m_SortToggle.isOn = false;
+
+            _loaded = true;
         }
     }
 }
