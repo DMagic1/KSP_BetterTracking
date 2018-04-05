@@ -35,6 +35,8 @@ namespace BetterTracking.Unity
         private RectTransform _content;
         private ReorderableListContent _listContent;
 
+        private int _sortType;
+
         public RectTransform Content
         {
             get
@@ -45,6 +47,12 @@ namespace BetterTracking.Unity
                 }
                 return _content;
             }
+        }
+
+        public int SortType
+        {
+            get { return _sortType; }
+            set { _sortType = value; }
         }
 
         Canvas GetCanvas()
@@ -78,7 +86,7 @@ namespace BetterTracking.Unity
             _listContent = ContentLayout.gameObject.AddComponent<ReorderableListContent>();
             _listContent.Init(this);
         }
-
+        
         #region Nested type: ReorderableListEventStruct
 
         [Serializable]

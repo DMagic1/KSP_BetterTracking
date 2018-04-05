@@ -22,7 +22,8 @@ namespace BetterTracking.Unity
 
         public void OnTransformChildrenChanged()
         {
-            if(this.isActiveAndEnabled)StartCoroutine(RefreshChildren());
+            if (this.isActiveAndEnabled && _extList != null && _extList.SortType < 2)
+                StartCoroutine(RefreshChildren());
         }
 
         public void Init(ReorderableList extList)
@@ -38,7 +39,7 @@ namespace BetterTracking.Unity
         private IEnumerator RefreshChildren()
         {
             yield return new WaitForEndOfFrame();
-
+            
             if (_rect.childCount > 0)
             {
                 var first = _rect.GetChild(0);
@@ -60,12 +61,12 @@ namespace BetterTracking.Unity
                         if (group == null)
                             yield return null;
                     }
-
+                    
                     while (!group.Initialized || group.Header == null)
                     {
                         yield return null;
                     }
-
+                    
                     //Handle new chilren
                     for (int i = 0; i < _rect.childCount; i++)
                     {
@@ -82,21 +83,16 @@ namespace BetterTracking.Unity
                             _ele = child.Header.DragHandle.AddComponent<ReorderableListElement>();
                             _ele.Init(_extList);
                         }
-
-                        //Get or Create ReorderableListElement
-                        //_ele = _rect.GetChild(i).gameObject.GetComponent<ReorderableListElement>() ??
-                        //       _rect.GetChild(i).gameObject.AddComponent<ReorderableListElement>();
-                        //_ele.Init(_extList);
-
+                        
                         _cachedChildren.Add(_rect.GetChild(i));
                         _cachedListElement.Add(_ele);
                     }
                 }
             }
-
+            
             ////HACK a little hack, if I don't wait one frame I don't have the right deleted children
             yield return null;
-
+            
             //Remove deleted child
             for (int i = _cachedChildren.Count - 1; i >= 0; i--)
             {
