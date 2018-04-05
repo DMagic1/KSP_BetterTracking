@@ -30,6 +30,7 @@ THE SOFTWARE.
 using UnityEngine;
 using UnityEngine.UI;
 using BetterTracking.Unity.Interface;
+using UnityEngine.EventSystems;
 
 namespace BetterTracking.Unity
 {
@@ -59,6 +60,8 @@ namespace BetterTracking.Unity
         private Toggle m_SortToggle = null;
         [SerializeField]
         private GameObject m_SortOrderButton = null;
+        [SerializeField]
+        private InputHandler m_SearchField = null;
 
         public Sprite m_TimerAscIcon = null;
         public Sprite m_TimerDescIcon = null;
@@ -71,8 +74,36 @@ namespace BetterTracking.Unity
         private Transform _dropDownParent;
         private SortDropDown _dropDown;
 
+        private Animator _anim;
+
         private bool _loaded;
-        
+
+        private void Awake()
+        {
+            _anim = GetComponent<Animator>();
+
+            if (m_SearchField != null)
+                m_SearchField.OnValueChange.AddListener(new UnityEngine.Events.UnityAction<string>(OnSearchInput));
+        }
+
+        private void OnDestroy()
+        {
+            if (m_SearchField != null)
+                m_SearchField.OnValueChange.RemoveAllListeners();
+        }
+
+        private void Update()
+        {
+            if (_sortInterface == null)
+                return;
+
+            if (_sortInterface.LockInput)
+            {
+                if (m_SearchField != null && !m_SearchField.IsFocused)
+                    _sortInterface.LockInput = false;
+            }
+        }
+
         public void Initialize(ISortHeader sort)
         {
             _sortInterface = sort;
@@ -153,24 +184,24 @@ namespace BetterTracking.Unity
             if (_sortInterface == null)
                 return;
 
-            if (_sortInterface.CurrentMode == 3)
-            {
-                if (m_SortOrderButton != null)
-                    m_SortOrderButton.SetActive(false);
+            //if (_sortInterface.CurrentMode == 3)
+            //{
+            //    if (m_SortOrderButton != null)
+            //        m_SortOrderButton.SetActive(false);
 
-                if (m_SortToggle != null)
-                    m_SortToggle.gameObject.SetActive(false);
+            //    if (m_SortToggle != null)
+            //        m_SortToggle.gameObject.SetActive(false);
 
-                return;
-            }
-            else
-            {
-                if (m_SortOrderButton != null && !m_SortOrderButton.activeSelf)
-                    m_SortOrderButton.SetActive(true);
+            //    return;
+            //}
+            //else
+            //{
+            //    if (m_SortOrderButton != null && !m_SortOrderButton.activeSelf)
+            //        m_SortOrderButton.SetActive(true);
 
-                if (m_SortToggle != null && !m_SortToggle.gameObject.activeSelf)
-                    m_SortToggle.gameObject.SetActive(true);
-            }
+            //    if (m_SortToggle != null && !m_SortToggle.gameObject.activeSelf)
+            //        m_SortToggle.gameObject.SetActive(true);
+            //}
 
             if (m_SortModeImage != null && m_SortOrderImage != null)
             {
@@ -186,6 +217,7 @@ namespace BetterTracking.Unity
                                 m_SortModeImage.sprite = _sortInterface.BodySortOrder ? m_AlphaAscIcon : m_AlphaDescIcon;
                                 break;
                             case 2:
+                            case 3:
                                 m_SortModeImage.sprite = m_TypeSortIcon;
                                 break;
                         }
@@ -203,11 +235,32 @@ namespace BetterTracking.Unity
                                 m_SortModeImage.sprite = _sortInterface.TypeSortOrder ? m_AlphaAscIcon : m_AlphaDescIcon;
                                 break;
                             case 2:
+                            case 3:
                                 m_SortModeImage.sprite = m_BodySortIcon;
                                 break;
                         }
 
                         m_SortOrderImage.sprite = _sortInterface.TypeSortOrder ? m_SortAscIcon : m_SortDescIcon;
+
+                        break;
+                    case 3:
+                        switch(_sortInterface.StockSortMode)
+                        {
+                            case 0:
+                                m_SortModeImage.sprite = _sortInterface.StockSortOrder ? m_TimerAscIcon : m_TimerDescIcon;
+                                break;
+                            case 1:
+                                m_SortModeImage.sprite = _sortInterface.StockSortOrder ? m_AlphaAscIcon : m_AlphaDescIcon;
+                                break;
+                            case 2:
+                                m_SortModeImage.sprite = m_TypeSortIcon;
+                                break;
+                            case 3:
+                                m_SortModeImage.sprite = m_BodySortIcon;
+                                break;
+                        }
+
+                        m_SortOrderImage.sprite = _sortInterface.StockSortOrder ? m_SortAscIcon : m_SortDescIcon;
 
                         break;
                 }
@@ -226,6 +279,9 @@ namespace BetterTracking.Unity
                     break;
                 case 1:
                     _sortInterface.TypeSortOrder = !_sortInterface.TypeSortOrder;
+                    break;
+                case 3:
+                    _sortInterface.StockSortOrder = !_sortInterface.StockSortOrder;
                     break;
             }
 
@@ -282,5 +338,40 @@ namespace BetterTracking.Unity
 
             _loaded = true;
         }
+
+        public void ToggleSearch(bool isOn)
+        {
+            if (_anim != null)
+                _anim.SetBool("search", isOn);
+
+            if (!isOn && _sortInterface != null)
+            {
+                _sortInterface.LockInput = false;
+                _sortInterface.SearchString = "";
+            }
+
+            if (m_SearchField != null)
+                m_SearchField.OnTextUpdate.Invoke("");
+        }
+
+        public void OnInputClick(BaseEventData eventData)
+        {
+            if (!(eventData is PointerEventData) || _sortInterface == null)
+                return;
+
+            if (((PointerEventData)eventData).button != PointerEventData.InputButton.Left)
+                return;
+
+            _sortInterface.LockInput = true;
+        }
+
+        public void OnSearchInput(string input)
+        {
+            if (_sortInterface == null)
+                return;
+
+            _sortInterface.SearchString = input;
+        }
+
     }
 }
