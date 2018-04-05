@@ -38,8 +38,6 @@ namespace BetterTracking
 
         private void Awake()
         {
-            //Tracking_Utils.TrackingLog("Widget Awaken");
-
             _widget = GetComponent<TrackingStationWidget>();
 
             if (_widget == null)
@@ -62,8 +60,6 @@ namespace BetterTracking
         {
             if (_widget == null)
                 return;
-
-            //Tracking_Utils.TrackingLog("Widget Listener Toggle: {0} - {1}", _widget.vessel.vesselName, isOn);
             
             if (isOn)
                 Tracking_Controller.OnWidgetSelect.Invoke(_widget);
