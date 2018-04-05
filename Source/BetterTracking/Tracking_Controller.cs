@@ -27,6 +27,7 @@ THE SOFTWARE.
 */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
@@ -45,11 +46,16 @@ namespace BetterTracking
     [KSPAddon(KSPAddon.Startup.TrackingStation, false)]
     public class Tracking_Controller : MonoBehaviour, ISortHeader
     {
+        private const string CONTROL_LOCK = "TRACKING_LOCK";
+
         public static OnWidgetSelect OnWidgetSelect = new OnWidgetSelect();
         public static OnWidgetAwake OnWidgetAwake = new OnWidgetAwake();
 
         private bool _widgetAwakeSet;
         private bool _instantStart;
+        private bool _inputLock;
+
+        private string _searchString = "";
 
         private SpaceTracking _TrackingStation;
         
@@ -57,13 +63,15 @@ namespace BetterTracking
         private GameObject _NewTrackingList;
         private Transform _ListParent;
 
+        ReorderableList _ReorderableList;
+
         private ScrollRect _ScrollView;
         private Rect _ScrollViewRect;
         private Camera _CanvasCamera;
-
-        //private TrackingStationWidget _WidgetPrefab;
-
+        
         private Tracking_Mode _CurrentMode = Tracking_Mode.CelestialBody;
+
+        private DictionaryValueList<Vessel, double> _VesselManeuvers = new DictionaryValueList<Vessel, double>();
         
         private List<TrackingStationWidget> _TrackedVesselWidgets = new List<TrackingStationWidget>();
 
@@ -72,7 +80,10 @@ namespace BetterTracking
 
         private List<Tracking_Group> _TrackingGroups = new List<Tracking_Group>();
 
+        private List<Tracking_Vessel> _TrackingVessels = new List<Tracking_Vessel>();
+
         private List<VesselGroup> _UIList = new List<VesselGroup>();
+        private List<FullVesselItem> _UIVesselList = new List<FullVesselItem>();
 
         private ToggleGroup _VesselToggleGroup;
 
@@ -124,6 +135,10 @@ namespace BetterTracking
             OnWidgetSelect.AddListener(new UnityAction<TrackingStationWidget>(OnWidgetSelected));
             OnWidgetAwake.AddListener(new UnityAction<TrackingStationWidget>(OnWidgetAwaken));
 
+            GameEvents.onNewVesselCreated.Add(new EventData<Vessel>.OnEvent(OnVesselCreate));
+            GameEvents.onVesselDestroy.Add(new EventData<Vessel>.OnEvent(OnVesselDestroy));
+            GameEvents.onKnowledgeChanged.Add(new EventData<GameEvents.HostedFromToAction<IDiscoverable, DiscoveryLevels>>.OnEvent(OnKnowledgeChange));
+
             _CurrentMode = (Tracking_Mode)Tracking_Persistence.SortMode;
 
             StartCoroutine(WaitForTrackingStation());
@@ -136,19 +151,20 @@ namespace BetterTracking
             
             OnWidgetSelect.RemoveListener(new UnityAction<TrackingStationWidget>(OnWidgetSelected));
             OnWidgetAwake.RemoveListener(new UnityAction<TrackingStationWidget>(OnWidgetAwaken));
+
+            GameEvents.onNewVesselCreated.Remove(new EventData<Vessel>.OnEvent(OnVesselCreate));
+            GameEvents.onVesselDestroy.Remove(new EventData<Vessel>.OnEvent(OnVesselDestroy));
+            GameEvents.onKnowledgeChanged.Remove(new EventData<GameEvents.HostedFromToAction<IDiscoverable, DiscoveryLevels>>.OnEvent(OnKnowledgeChange));
         }
 
         private IEnumerator WaitForTrackingStation()
         {
             WaitForSeconds wait = new WaitForSeconds(0.2f);
-
-            //Tracking_Utils.TrackingLog("Looking for Space Tracking...");
-
+            
             int count = 0;
 
-            while(_TrackingStation == null)
+            while (_TrackingStation == null)
             {
-                //Tracking_Utils.TrackingLog("Tracking Check: {0}", count);
                 count++;
                 var tracking = FindObjectsOfType<SpaceTracking>();
 
@@ -160,9 +176,7 @@ namespace BetterTracking
 
                         if (space == null)
                             continue;
-
-                        //Tracking_Utils.TrackingLog("Space Tracking Logged: {0}", i);
-
+                        
                         _TrackingStation = space;
                     }
                 }
@@ -171,12 +185,12 @@ namespace BetterTracking
                     yield return null;
             }
 
-            _ListParent = _TrackingStation.listContainer.parent.transform;
+            _ListParent = _TrackingStation.listContainer.parent;
 
             FindScrollRect();
 
             StartCoroutine(WaitForCamera());
-            
+
             AdjustUITransforms();
 
             StartCoroutine(AttachSortHeader());
@@ -187,21 +201,18 @@ namespace BetterTracking
 
             _NewTrackingList = Instantiate(_OldTrackingList);
 
-            ReorderableList reorder = _OldTrackingList.transform.parent.gameObject.AddComponent<ReorderableList>();
-            reorder.Init(_NewTrackingList.GetComponent<LayoutGroup>(), _NewTrackingList.GetComponent<RectTransform>());
+            _ReorderableList = _OldTrackingList.transform.parent.gameObject.AddComponent<ReorderableList>();
+            _ReorderableList.Init(_NewTrackingList.GetComponent<LayoutGroup>(), _NewTrackingList.GetComponent<RectTransform>());
+            _ReorderableList.SortType = (int)_CurrentMode;
 
-            if (_CurrentMode != Tracking_Mode.Default)
-            {
-                _NewTrackingList.transform.SetParent(_ListParent, false);
+            _NewTrackingList.transform.SetParent(_ListParent, false);
 
-                _TrackingStation.listContainer.SetParent(null, false);
-            }
+            _TrackingStation.listContainer.SetParent(null, false);
 
             _OrderedBodyList = OrderBodies();
             _OrderedTypeList = OrderTypes();
 
             Tracking_Utils.TrackingLog("Tracking Station Processed");
-            
         }
         
         private void FindScrollRect()
@@ -304,19 +315,60 @@ namespace BetterTracking
             Tracking_Utils.TrackingLog("Sort Header Inserted");
         }
 
+        private void OnVesselCreate(Vessel vessel)
+        {
+            _instantStart = true;
+        }
+
+        private void OnVesselDestroy(Vessel vessel)
+        {
+            _instantStart = true;
+            
+            if (_TrackedVesselWidgets == null || _TrackedVesselWidgets.Count <= 1)
+                StartCoroutine(WaitForUpdate(3));
+        }
+
+        private void OnKnowledgeChange(GameEvents.HostedFromToAction<IDiscoverable, DiscoveryLevels> knowledge)
+        {
+            _instantStart = true;
+
+            if (_TrackedVesselWidgets == null || _TrackedVesselWidgets.Count <= 1)
+                StartCoroutine(WaitForUpdate(3));
+        }
+
+        private IEnumerator WaitForUpdate(int frames)
+        {
+            int time = 0;
+
+            while (time < frames)
+            {
+                time++;
+
+                yield return new WaitForEndOfFrame();
+            }
+            
+            _TrackedVesselWidgets.Clear();
+
+            ParseWidgetContainer();
+
+            if (_TrackedVesselWidgets == null || _TrackedVesselWidgets.Count <= 0)
+            {
+                if (string.IsNullOrEmpty(_searchString))
+                    ListUpdate();
+                else
+                    SearchListUpdate();
+            }
+        }
+
         private void OnWidgetSelected(TrackingStationWidget widget)
         {
             if (_TrackingGroups == null || _TrackingGroups.Count <= 0)
                 return;
 
             if (widget == null)
-            {
                 return;
-            }
             else if (widget.vessel == null)
-            {
                 return;
-            }
 
             for (int i = _TrackingGroups.Count - 1; i >= 0; i--)
             {
@@ -332,20 +384,30 @@ namespace BetterTracking
 
         private void OnWidgetAwaken(TrackingStationWidget widget)
         {
-            if (_widgetAwakeSet || _NewTrackingList == null || _CurrentMode == Tracking_Mode.Default)
+            if (_widgetAwakeSet || _NewTrackingList == null)
                 return;
             
             _widgetAwakeSet = true;
 
-            StartCoroutine(WidgetListReset());
+            StartCoroutine(WidgetListReset(2));
         }
 
-        private IEnumerator WidgetListReset()
+        private IEnumerator WidgetListReset(int frames)
         {
-            yield return new WaitForEndOfFrame();
+            int time = 0;
+
+            while (time < frames)
+            {
+                time++;
+
+                yield return new WaitForEndOfFrame();
+            }
             
             UpdateScrollRect(_NewTrackingList.transform as RectTransform);
-
+            
+            if (_ReorderableList != null)
+                _ReorderableList.SortType = (int)_CurrentMode;
+            
             _TrackedVesselWidgets.Clear();
 
             _OrderedBodyList = OrderBodies();
@@ -353,7 +415,10 @@ namespace BetterTracking
 
             ParseWidgetContainer();
 
-            ListUpdate();
+            if (string.IsNullOrEmpty(_searchString))
+                ListUpdate();
+            else
+                SearchListUpdate();
 
             _widgetAwakeSet = false;
         }
@@ -369,28 +434,36 @@ namespace BetterTracking
         private void ParseWidgetContainer()
         {
             int count = _TrackingStation.listContainer.childCount;
-
-            //Tracking_Utils.TrackingLog("Processing {0} Vessel Widgets", count);
-
-            //Tracking_Utils.TrackingLog("Widget Parent: {0}", _TrackingStation.listContainer.name);
-
-            //if (_TrackingStation.listContainer.parent != null)
-            //    Tracking_Utils.TrackingLog("Widget List Parent: {0}", _TrackingStation.listContainer.parent.name);
-
-            for (int i = 0; i < count; i++)
+            
+            for (int i = _TrackingStation.listContainer.childCount - 1; i >= 0; i--)
             {
                 Transform t = _TrackingStation.listContainer.GetChild(i);
 
                 TrackingStationWidget widget = t.GetComponent<TrackingStationWidget>();
 
-                if (widget != null)
+                if (widget != null && widget.vessel != null)
+                {
                     _TrackedVesselWidgets.Add(widget);
+
+                    if (!_VesselManeuvers.ContainsKey(widget.vessel))
+                    {
+                        bool maneuver = false;
+
+                        double time = Vessel.GetNextManeuverTime(widget.vessel, out maneuver);
+
+                        if (maneuver)
+                            _VesselManeuvers.Add(widget.vessel, time);
+                        else
+                            _VesselManeuvers.Add(widget.vessel, -1000000000);
+                    }
+                }
             }
         }
 
         public void ListUpdate()
         {
             _TrackingGroups.Clear();
+            _TrackingVessels.Clear();
             
             switch(_CurrentMode)
             {
@@ -398,13 +471,13 @@ namespace BetterTracking
                     _TrackingGroups = SortCelestialBodies();
                     break;
                 case Tracking_Mode.Default:
-
+                    _TrackingVessels = SortDefaultType();
                     break;
                 case Tracking_Mode.VesselType:
                     _TrackingGroups = SortVesselType();
                     break;
             }
-
+            
             ClearUI();
 
             GenerateUI();
@@ -412,10 +485,26 @@ namespace BetterTracking
             _instantStart = false;
         }
 
+        private void SearchListUpdate()
+        {
+            if (_ReorderableList != null)
+                _ReorderableList.SortType = 4;
+
+            _TrackingVessels.Clear();
+
+            _TrackingVessels = SortDefaultType();
+
+            _TrackingVessels = SearchVessels(_TrackingVessels);
+            
+            ClearUI();
+
+            GenerateSearchUI();
+
+            _instantStart = false;
+        }
+
         private List<Tracking_Group> SortCelestialBodies()
         {
-            //Tracking_Utils.TrackingLog("Sorting Celestial Body List");
-
             List<Tracking_Group> vesselGroups = new List<Tracking_Group>();
 
             int count = _OrderedBodyList.Count;
@@ -434,8 +523,6 @@ namespace BetterTracking
                         bodyVessels.Add(_TrackedVesselWidgets[j]);
                 }
                 
-                //Tracking_Utils.TrackingLog("Body: {0} With {1} Vessels", Tracking_Utils.LocalizeBodyName(body.Body.displayName), bodyVessels.Count);
-
                 List<Tracking_MoonGroup> moonGroups = new List<Tracking_MoonGroup>();
 
                 int moons = body.Moons.Count;
@@ -449,9 +536,7 @@ namespace BetterTracking
                         if (_TrackedVesselWidgets[l].vessel.mainBody == body.Moons[k])
                             moonVessels.Add(_TrackedVesselWidgets[l]);
                     }
-
-                    //Tracking_Utils.TrackingLog("Moon: {0} With {1} Vessels", Tracking_Utils.LocalizeBodyName(body.Moons[k].displayName), moonVessels.Count);
-
+                    
                     if (moonVessels.Count > 0)
                         moonGroups.Add(new Tracking_MoonGroup() { Moon = body.Moons[k], Vessels = SortWidgets(moonVessels) });
                 }
@@ -491,13 +576,41 @@ namespace BetterTracking
                 if (_TrackedVesselWidgets[i].vessel.vesselType == type)
                     typeVessels.Add(_TrackedVesselWidgets[i]);
             }
-
-            //Tracking_Utils.TrackingLog("Type: {0} With {1} Vessels", type, typeVessels.Count);
             
             if (typeVessels.Count > 0)
                 return new Tracking_Group(Tracking_Utils.VesselTypeString(type), Tracking_Persistence.GetTypePersistence((int)type), _instantStart, SortWidgets(typeVessels), null, null, type, Tracking_Mode.VesselType);
 
             return null;
+        }
+
+        private List<Tracking_Vessel> SortDefaultType()
+        {
+            List<Tracking_Vessel> vessels = new List<Tracking_Vessel>();
+
+            List<TrackingStationWidget> widgets = SortWidgets(_TrackedVesselWidgets);
+            
+            for (int i = widgets.Count - 1; i >= 0; i--)
+            {
+                if (widgets[i] != null)
+                    vessels.Add(new Tracking_Vessel(widgets[i]));
+            }
+
+            return vessels;
+        }
+
+        private List<Tracking_Vessel> SearchVessels(List<Tracking_Vessel> vessels)
+        {
+            List<Tracking_Vessel> searchList = new List<Tracking_Vessel>();
+
+            int count = vessels.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (vessels[i].Vessel.vesselName.StringContains(_searchString, StringComparison.OrdinalIgnoreCase))
+                    searchList.Add(vessels[i]);
+            }
+
+            return searchList;
         }
 
         private List<TrackingStationWidget> SortWidgets(List<TrackingStationWidget> widgets)
@@ -507,15 +620,19 @@ namespace BetterTracking
             int mode = 0;
             bool asc = true;
 
-            switch (CurrentMode)
+            switch (_CurrentMode)
             {
-                case 0:
+                case Tracking_Mode.CelestialBody:
                     mode = BodySortMode;
                     asc = BodySortOrder;
                     break;
-                case 1:
+                case Tracking_Mode.VesselType:
                     mode = TypeSortMode;
                     asc = TypeSortOrder;
+                    break;
+                case Tracking_Mode.Default:
+                    mode = StockSortMode;
+                    asc = StockSortOrder;
                     break;
             }
             
@@ -528,12 +645,29 @@ namespace BetterTracking
                     sorted = SortWidgetsAlpha(widgets, asc);
                     break;
                 case 2:
-                    switch (CurrentMode)
+                    switch (_CurrentMode)
                     {
-                        case 0:
+                        case Tracking_Mode.CelestialBody:
                             sorted = SortWidgetsType(widgets, asc);
                             break;
-                        case 1:
+                        case Tracking_Mode.VesselType:
+                            sorted = SortWidgetsBody(widgets, asc);
+                            break;
+                        case Tracking_Mode.Default:
+                            sorted = SortWidgetsType(widgets, asc);
+                            break;
+                    }
+                    break;
+                case 3:
+                    switch (_CurrentMode)
+                    {
+                        case Tracking_Mode.CelestialBody:
+                            sorted = SortWidgetsType(widgets, asc);
+                            break;
+                        case Tracking_Mode.VesselType:
+                            sorted = SortWidgetsBody(widgets, asc);
+                            break;
+                        case Tracking_Mode.Default:
                             sorted = SortWidgetsBody(widgets, asc);
                             break;
                     }
@@ -543,104 +677,166 @@ namespace BetterTracking
             return sorted;
         }
 
+        private List<KeyValuePair<TrackingStationWidget, double>> GetManeuvers(List<TrackingStationWidget> widgets)
+        {
+            List<KeyValuePair<TrackingStationWidget, double>> maneuvers = new List<KeyValuePair<TrackingStationWidget, double>>();
+
+            for (int i = widgets.Count - 1; i >= 0; i--)
+            {
+                if (_VesselManeuvers.ContainsKey(widgets[i].vessel))
+                {
+                    double t = _VesselManeuvers[widgets[i].vessel];
+
+                    if (t > 0)
+                    {
+                        maneuvers.Add(new KeyValuePair<TrackingStationWidget, double>(widgets[i], t));
+
+                        widgets.RemoveAt(i);
+                    }
+                }
+                else
+                {
+                    bool maneuver = false;
+
+                    double t = Vessel.GetNextManeuverTime(widgets[i].vessel, out maneuver);
+
+                    if (maneuver)
+                    {
+                        _VesselManeuvers.Add(widgets[i].vessel, t);
+
+                        maneuvers.Add(new KeyValuePair<TrackingStationWidget, double>(widgets[i], t));
+
+                        widgets.RemoveAt(i);
+                    }
+                    else
+                        _VesselManeuvers.Add(widgets[i].vessel, -1000000000);
+                }
+            }
+
+            if (maneuvers.Count > 0)
+                maneuvers.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+            return maneuvers;
+        }
+
         private List<TrackingStationWidget> SortWidgetsTime(List<TrackingStationWidget> widgets, bool asc)
         {
+            List<KeyValuePair<TrackingStationWidget, double>> maneuvers = GetManeuvers(widgets);
+
+            List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
+
             if (asc)
-                return widgets;
+                sorted = widgets;
             else
             {
-                List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
-
                 for (int i = widgets.Count - 1; i >= 0; i--)
                 {
                     sorted.Add(widgets[i]);
                 }
+            }
 
-                return sorted;
-            }         
+            int count = maneuvers.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                sorted.Add(maneuvers[i].Key);
+            }
+
+            return sorted;
         }
 
         private List<TrackingStationWidget> SortWidgetsAlpha(List<TrackingStationWidget> widgets, bool asc)
         {
-            widgets.Sort((a, b) => RUIutils.SortAscDescPrimarySecondary(asc, a.vessel.vesselName.CompareTo(b.vessel.vesselName), a.vessel.launchTime.CompareTo(b.vessel.launchTime)));
-            
+            List<KeyValuePair<TrackingStationWidget, double>> maneuvers = GetManeuvers(widgets);
+
+            widgets.Sort((a, b) => RUIutils.SortAscDescPrimarySecondary(!asc, a.vessel.vesselName.CompareTo(b.vessel.vesselName), a.vessel.launchTime.CompareTo(b.vessel.launchTime)));
+
+            int count = maneuvers.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                widgets.Add(maneuvers[i].Key);
+            }
+
             return widgets;
         }
 
         private List<TrackingStationWidget> SortWidgetsBody(List<TrackingStationWidget> widgets, bool asc)
         {
+            List<KeyValuePair<TrackingStationWidget, double>> maneuvers = GetManeuvers(widgets);
+
             List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
             
             if (asc)
-            {
-                for (int i = 0; i < _OrderedBodyList.Count; i++)
-                {
-                    Tracking_BodyGroup group = _OrderedBodyList[i];
-
-                    for (int j = 0; j < widgets.Count; j++)
-                    {
-                        if (widgets[j].vessel.mainBody.flightGlobalsIndex == group.Body.flightGlobalsIndex)
-                            sorted.Add(widgets[j]);
-                    }
-
-                    for (int k = 0; k < group.Moons.Count; k++)
-                    {
-                        int index = group.Moons[k].flightGlobalsIndex;
-
-                        for (int l = 0; l < widgets.Count; l++)
-                        {
-                            if (widgets[l].vessel.mainBody.flightGlobalsIndex == index)
-                                sorted.Add(widgets[l]);
-                        }
-                    }
-                }
-            }
-            else
             {
                 for (int i = _OrderedBodyList.Count - 1; i >= 0; i--)
                 {
                     Tracking_BodyGroup group = _OrderedBodyList[i];
 
-                    for (int j = 0; j < widgets.Count; j++)
-                    {
-                        if (widgets[j].vessel.mainBody.flightGlobalsIndex == group.Body.flightGlobalsIndex)
-                            sorted.Add(widgets[j]);
-                    }
-
-                    for (int k = 0; k < group.Moons.Count; k++)
+                    for (int k = group.Moons.Count - 1; k >= 0; k--)
                     {
                         int index = group.Moons[k].flightGlobalsIndex;
 
-                        for (int l = 0; l < widgets.Count; l++)
+                        for (int l = widgets.Count - 1; l >= 0; l--)
                         {
                             if (widgets[l].vessel.mainBody.flightGlobalsIndex == index)
                                 sorted.Add(widgets[l]);
                         }
                     }
-                }
-            }
-            
-            return sorted;
-        }
 
-        private List<TrackingStationWidget> SortWidgetsType(List<TrackingStationWidget> widgets, bool asc)
-        {
-            List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
-            
-            if (asc)
-            {
-                for (int i = 0; i < Tracking_Persistence.TypeOrderList.Count; i++)
-                {
-                    int index = Tracking_Persistence.TypeOrderList[i];
-
-                    for (int j = 0; j < widgets.Count; j++)
+                    for (int j = widgets.Count - 1; j >= 0; j--)
                     {
-                        if (widgets[j].vessel.vesselType == (VesselType)index)
+                        if (widgets[j].vessel.mainBody.flightGlobalsIndex == group.Body.flightGlobalsIndex)
                             sorted.Add(widgets[j]);
                     }
                 }
             }
             else
+            {
+                int b = _OrderedBodyList.Count;
+
+                for (int i = 0; i < b; i++)
+                {
+                    Tracking_BodyGroup group = _OrderedBodyList[i];
+
+                    int m = group.Moons.Count;
+
+                    for (int k = 0; k < m; k++)
+                    {
+                        int index = group.Moons[k].flightGlobalsIndex;
+
+                        for (int l = widgets.Count - 1; l >= 0; l--)
+                        {
+                            if (widgets[l].vessel.mainBody.flightGlobalsIndex == index)
+                                sorted.Add(widgets[l]);
+                        }
+                    }
+
+                    for (int j = widgets.Count - 1; j >= 0; j--)
+                    {
+                        if (widgets[j].vessel.mainBody.flightGlobalsIndex == group.Body.flightGlobalsIndex)
+                            sorted.Add(widgets[j]);
+                    }
+                }
+            }
+
+            int count = maneuvers.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                sorted.Add(maneuvers[i].Key);
+            }
+
+            return sorted;
+        }
+
+        private List<TrackingStationWidget> SortWidgetsType(List<TrackingStationWidget> widgets, bool asc)
+        {
+            List<KeyValuePair<TrackingStationWidget, double>> maneuvers = GetManeuvers(widgets);
+
+            List<TrackingStationWidget> sorted = new List<TrackingStationWidget>();
+            
+            if (asc)
             {
                 for (int i = Tracking_Persistence.TypeOrderList.Count - 1; i >= 0; i--)
                 {
@@ -653,7 +849,29 @@ namespace BetterTracking
                     }
                 }
             }
-            
+            else
+            {
+                int t = Tracking_Persistence.TypeOrderList.Count;
+
+                for (int i = 0; i < t; i++)
+                {
+                    int index = Tracking_Persistence.TypeOrderList[i];
+                    
+                    for (int j = widgets.Count - 1; j >= 0; j--)
+                    {
+                        if (widgets[j].vessel.vesselType == (VesselType)index)
+                            sorted.Add(widgets[j]);
+                    }
+                }
+            }
+
+            int count = maneuvers.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                sorted.Add(maneuvers[i].Key);
+            }
+
             return sorted;
         }
 
@@ -663,33 +881,84 @@ namespace BetterTracking
             {
                 _UIList[i].gameObject.SetActive(false);
                 _UIList[i].transform.SetParent(null, false);
-                Destroy(_UIList[i].gameObject);
+                DestroyImmediate(_UIList[i].gameObject);
             }
 
             _UIList.Clear();
+
+            for (int i = 0; i < _UIVesselList.Count; i++)
+            {
+                _UIVesselList[i].gameObject.SetActive(false);
+                _UIVesselList[i].transform.SetParent(null, false);
+                DestroyImmediate(_UIVesselList[i].gameObject);
+            }
+
+            _UIVesselList.Clear();
 
             int count = _NewTrackingList.transform.childCount;
 
             for (int i = count - 1; i >= 0; i--)
             {
                 _NewTrackingList.transform.GetChild(i).gameObject.SetActive(false);
-                Destroy(_NewTrackingList.transform.GetChild(i).gameObject);
+                DestroyImmediate(_NewTrackingList.transform.GetChild(i).gameObject);
             }
         }
 
         private void GenerateUI()
         {
-            if (_TrackingGroups == null || _TrackingGroups.Count <= 0)
+            if (_NewTrackingList == null)
                 return;
 
-            if (Tracking_Loader.GroupPrefab == null || _NewTrackingList == null)
-                return;
-
-            int count = _TrackingGroups.Count;
-
-            for (int i = 0; i < count; i++)
+            switch (_CurrentMode)
             {
-                AddTrackingGroup(_TrackingGroups[i]);
+                case Tracking_Mode.Default:
+                    if (_TrackingVessels == null || _TrackingVessels.Count <= 0)
+                        return;
+
+                    if (Tracking_Loader.FullVesselPrefab == null)
+                        return;
+
+                    int vessels = _TrackingVessels.Count;
+
+                    for (int i = 0; i < vessels; i++)
+                    {
+                        AddTrackingVessel(_TrackingVessels[i]);
+                    }
+
+                    break;
+                default:
+                    if (_TrackingGroups == null || _TrackingGroups.Count <= 0)
+                        return;
+
+                    if (Tracking_Loader.GroupPrefab == null)
+                        return;
+
+                    int count = _TrackingGroups.Count;
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        AddTrackingGroup(_TrackingGroups[i]);
+                    }
+                    break;
+            }
+        }
+
+        private void GenerateSearchUI()
+        {
+            if (_NewTrackingList == null)
+                return;
+
+            if (_TrackingVessels == null || _TrackingVessels.Count <= 0)
+                return;
+
+            if (Tracking_Loader.FullVesselPrefab == null)
+                return;
+
+            int vessels = _TrackingVessels.Count;
+
+            for (int i = 0; i < vessels; i++)
+            {
+                AddTrackingVessel(_TrackingVessels[i]);
             }
         }
 
@@ -706,64 +975,45 @@ namespace BetterTracking
             _UIList.Add(UI);
         }
 
+        private void AddTrackingVessel(Tracking_Vessel vessel)
+        {
+            FullVesselItem UI = Instantiate(Tracking_Loader.FullVesselPrefab).GetComponent<FullVesselItem>();
+
+            if (UI == null)
+                return;
+
+            UI.transform.SetParent(_NewTrackingList.transform, false);
+            UI.Initialize(vessel);
+
+            _UIVesselList.Add(UI);
+        }
+
         public void ActivateDefaultSort()
         {
-            if (_CurrentMode != Tracking_Mode.Default)
-            {
-                _OldTrackingList.transform.SetParent(_ListParent, false);
-
-                _NewTrackingList.transform.SetParent(null, false);
-
-                UpdateScrollRect(_OldTrackingList.transform as RectTransform);
-            }
-
             _CurrentMode = Tracking_Mode.Default;
-
-            GameEvents.OnMapViewFiltersModified.Fire(MapViewFiltering.VesselTypeFilter.All);
-
-            ClearUI();
+            
+            StartCoroutine(WidgetListReset(1));
         }
 
         public void ActivateCelestialSort()
         {
-            if (_CurrentMode == Tracking_Mode.Default)
-            {
-                _NewTrackingList.transform.SetParent(_ListParent, false);
-
-                _OldTrackingList.transform.SetParent(null, false);
-            }
-
             _CurrentMode = Tracking_Mode.CelestialBody;
             
-            StartCoroutine(WidgetListReset());
+            StartCoroutine(WidgetListReset(1));
         }
 
         public void ActivateVesselTypeSort()
         {
-            if (_CurrentMode == Tracking_Mode.Default)
-            {
-                _NewTrackingList.transform.SetParent(_ListParent, false);
-
-                _OldTrackingList.transform.SetParent(null, false);
-            }
-
             _CurrentMode = Tracking_Mode.VesselType;
             
-            StartCoroutine(WidgetListReset());
+            StartCoroutine(WidgetListReset(1));
         }
 
         public void ActivateCustomSort()
         {
-            if (_CurrentMode == Tracking_Mode.Default)
-            {
-                _NewTrackingList.transform.SetParent(_ListParent, false);
-
-                _OldTrackingList.transform.SetParent(null, false);
-            }
-
             _CurrentMode = Tracking_Mode.Custom;
 
-            StartCoroutine(WidgetListReset());
+            StartCoroutine(WidgetListReset(1));
         }
 
         private List<Tracking_BodyGroup> OrderBodies()
@@ -827,9 +1077,7 @@ namespace BetterTracking
 
                     if (index != Tracking_Persistence.BodyOrderList[i])
                         continue;
-
-                    //Tracking_Utils.TrackingLog("Body: {0} Order Position: {1}", bodies[j].Body.bodyName, i);
-
+                    
                     ordered.Add(bodies[j]);
                     break;
                 }
@@ -871,7 +1119,7 @@ namespace BetterTracking
 
                 _instantStart = true;
 
-                StartCoroutine(WidgetListReset());
+                StartCoroutine(WidgetListReset(1));
             }
         }
 
@@ -884,7 +1132,20 @@ namespace BetterTracking
                 
                 _instantStart = true;
 
-                StartCoroutine(WidgetListReset());
+                StartCoroutine(WidgetListReset(1));
+            }
+        }
+
+        public int StockSortMode
+        {
+            get { return Tracking_Persistence.StockOrderMode; }
+            set
+            {
+                Tracking_Persistence.StockOrderMode = value;
+
+                _instantStart = true;
+
+                StartCoroutine(WidgetListReset(1));
             }
         }
 
@@ -897,7 +1158,7 @@ namespace BetterTracking
 
                 _instantStart = true;
 
-                StartCoroutine(WidgetListReset());
+                StartCoroutine(WidgetListReset(1));
             }
         }
 
@@ -910,13 +1171,59 @@ namespace BetterTracking
 
                 _instantStart = true;
 
-                StartCoroutine(WidgetListReset());
+                StartCoroutine(WidgetListReset(1));
+            }
+        }
+
+        public bool StockSortOrder
+        {
+            get { return Tracking_Persistence.StockAscOrder; }
+            set
+            {
+                Tracking_Persistence.StockAscOrder = value;
+
+                _instantStart = true;
+
+                StartCoroutine(WidgetListReset(1));
             }
         }
 
         public Transform DropDownParent
         {
             get { return _ListParent.parent; }
+        }
+        
+        public bool LockInput
+        {
+            get { return _inputLock; }
+            set
+            {
+                _inputLock = value;
+
+                if (_inputLock)
+                    InputLockManager.SetControlLock(CONTROL_LOCK);
+                else
+                    InputLockManager.RemoveControlLock(CONTROL_LOCK);
+            }
+        }
+
+        public string SearchString
+        {
+            get { return _searchString; }
+            set
+            {
+                if (_searchString == value)
+                    return;
+                
+                _searchString = value;
+
+                _instantStart = true;
+
+                if (string.IsNullOrEmpty(value))
+                    StartCoroutine(WidgetListReset(1));
+                else
+                    SearchListUpdate();
+            }
         }
 
         public void SortBody(bool isOn)
