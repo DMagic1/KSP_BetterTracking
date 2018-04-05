@@ -147,12 +147,10 @@ namespace BetterTracking.Unity
                 return;
 
             ClearUI();
-
-            int count = vessels.Count;
-
-            for (int i = 0; i < count; i++)
+            
+            for (int i = vessels.Count - 1; i >= 0; i--)
             {
-                AddVessel(vessels[i], i >= count - 1);
+                AddVessel(vessels[i], i == 0);
             }
         }
 
