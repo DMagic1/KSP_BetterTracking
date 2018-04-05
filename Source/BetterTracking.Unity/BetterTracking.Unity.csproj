@@ -44,7 +44,9 @@
     <Compile Include="Extensions\ReorderableList.cs" />
     <Compile Include="Extensions\ReorderableListContent.cs" />
     <Compile Include="Extensions\ReorderableListElement.cs" />
+    <Compile Include="FullVesselItem.cs" />
     <Compile Include="HeaderItem.cs" />
+    <Compile Include="InputHandler.cs" />
     <Compile Include="Interface\IHeaderItem.cs" />
     <Compile Include="Interface\ISortHeader.cs" />
     <Compile Include="Interface\ISubHeaderItem.cs" />
@@ -66,6 +68,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y "$(TargetPath)" "C:\Users\DMagic\Documents\KSP\BetterTracking\Unity\Better Tracking\Assets\Plugins\"</PostBuildEvent>
+    <PostBuildEvent>copy /y "$(TargetPath)" "C:\Users\DMagic\Documents\KSP\Modlets\BetterTracking\Unity\Better Tracking\Assets\Plugins\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

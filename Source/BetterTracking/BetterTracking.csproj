@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="Tracking_Persistence.cs" />
     <Compile Include="Tracking_RDWatch.cs" />
+    <Compile Include="Util\Tracking_TMP_Input.cs" />
     <Compile Include="Util\Tracking_Utils.cs" />
     <Compile Include="Util\Tracking_WidgetListener.cs" />
     <Compile Include="UI\Tracking_SubGroup.cs" />
