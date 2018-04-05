@@ -48,6 +48,7 @@ namespace BetterTracking
 
         private static GameObject _groupPrefab;
         private static GameObject _sortHeaderPrefab;
+        private static GameObject _fullVesselPrefab;
 
         private Sprite _backgroundSprite;
         private Sprite _checkmarkSprite;
@@ -71,6 +72,11 @@ namespace BetterTracking
         public static GameObject SortHeaderPrefab
         {
             get { return _sortHeaderPrefab; }
+        }
+
+        public static GameObject FullVesselPrefab
+        {
+            get { return _fullVesselPrefab; }
         }
 
         private void Awake()
@@ -160,15 +166,16 @@ namespace BetterTracking
 
                 if (o == null)
                     continue;
-
-                //Tracking_Utils.TrackingLog(o.name);
-
+                
                 if (o.name == "HeaderGroup")
                     _groupPrefab = o;
                 else if (o.name == "SortHeader")
                     _sortHeaderPrefab = o;
+                else if (o.name == "FullVessel")
+                    _fullVesselPrefab = o;
 
                 processTMP(o);
+                processInputFields(o);
                 processUIComponents(o);
             }
 
@@ -205,7 +212,7 @@ namespace BetterTracking
             float spacing = text.lineSpacing;
             GameObject obj = text.gameObject;
 
-            MonoBehaviour.DestroyImmediate(text);
+            DestroyImmediate(text);
 
             Tracking_TMP tmp = obj.AddComponent<Tracking_TMP>();
 
@@ -225,7 +232,90 @@ namespace BetterTracking
             tmp.isOverlay = false;
             tmp.richText = true;
         }
-        
+
+        private static void processInputFields(GameObject obj)
+        {
+            InputHandler[] handlers = obj.GetComponentsInChildren<InputHandler>(true);
+
+            if (handlers == null)
+                return;
+
+            for (int i = 0; i < handlers.Length; i++)
+                TMPInputFromInput(handlers[i]);
+        }
+
+        private static void TMPInputFromInput(InputHandler handler)
+        {
+            if (handler == null)
+                return;
+
+            InputField input = handler.GetComponent<InputField>();
+
+            if (input == null)
+                return;
+
+            int limit = input.characterLimit;
+            TMP_InputField.ContentType content = GetTMPContentType(input.contentType);
+            float caretBlinkRate = input.caretBlinkRate;
+            int caretWidth = input.caretWidth;
+            Color selectionColor = input.selectionColor;
+            GameObject obj = input.gameObject;
+
+            RectTransform viewport = handler.GetComponentInChildren<RectMask2D>().rectTransform;
+            Tracking_TMP placholder = handler.GetComponentsInChildren<Tracking_TMP>()[0];
+            Tracking_TMP textComponent = handler.GetComponentsInChildren<Tracking_TMP>()[1];
+
+            if (viewport == null || placholder == null || textComponent == null)
+                return;
+
+            DestroyImmediate(input);
+
+            Tracking_TMP_Input tmp = obj.AddComponent<Tracking_TMP_Input>();
+
+            tmp.textViewport = viewport;
+            tmp.placeholder = placholder;
+            tmp.textComponent = textComponent;
+
+            tmp.characterLimit = limit;
+            tmp.contentType = content;
+            tmp.caretBlinkRate = caretBlinkRate;
+            tmp.caretWidth = caretWidth;
+            tmp.selectionColor = selectionColor;
+
+            tmp.readOnly = false;
+            tmp.shouldHideMobileInput = false;
+
+            tmp.fontAsset = UISkinManager.TMPFont;
+        }
+
+        private static TMP_InputField.ContentType GetTMPContentType(InputField.ContentType type)
+        {
+            switch (type)
+            {
+                case InputField.ContentType.Alphanumeric:
+                    return TMP_InputField.ContentType.Alphanumeric;
+                case InputField.ContentType.Autocorrected:
+                    return TMP_InputField.ContentType.Autocorrected;
+                case InputField.ContentType.Custom:
+                    return TMP_InputField.ContentType.Custom;
+                case InputField.ContentType.DecimalNumber:
+                    return TMP_InputField.ContentType.DecimalNumber;
+                case InputField.ContentType.EmailAddress:
+                    return TMP_InputField.ContentType.EmailAddress;
+                case InputField.ContentType.IntegerNumber:
+                    return TMP_InputField.ContentType.IntegerNumber;
+                case InputField.ContentType.Name:
+                    return TMP_InputField.ContentType.Name;
+                case InputField.ContentType.Password:
+                    return TMP_InputField.ContentType.Password;
+                case InputField.ContentType.Pin:
+                    return TMP_InputField.ContentType.Pin;
+                case InputField.ContentType.Standard:
+                    return TMP_InputField.ContentType.Standard;
+                default:
+                    return TMP_InputField.ContentType.Standard;
+            }
+        }
         private void processUIComponents(GameObject obj)
         {
             TrackingStyle[] styles = obj.GetComponentsInChildren<TrackingStyle>(true);
@@ -263,6 +353,9 @@ namespace BetterTracking
                     break;
                 case TrackingStyle.StyleTypes.Background:
                     style.setImage(skin.box.normal.background);
+                    break;
+                case TrackingStyle.StyleTypes.Input:
+                    style.setImage(skin.textField.normal.background);
                     break;
             }
         }
