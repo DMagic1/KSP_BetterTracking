@@ -39,9 +39,17 @@ namespace BetterTracking.Unity.Interface
 
         int TypeSortMode { get; set; }
 
+        int StockSortMode { get; set; }
+
         bool BodySortOrder { get; set; }
 
         bool TypeSortOrder { get; set; }
+
+        bool StockSortOrder { get; set; }
+
+        bool LockInput { get; set; }
+
+        string SearchString { get; set; }
 
         Transform DropDownParent { get; }
 
