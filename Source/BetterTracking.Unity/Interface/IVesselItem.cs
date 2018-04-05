@@ -57,5 +57,7 @@ namespace BetterTracking.Unity.Interface
         void SetUI(VesselItem vessel);
 
         void SetSubUI(SubVesselItem vessel);
+
+        void SetFullUI(FullVesselItem vessel);
     }
 }
