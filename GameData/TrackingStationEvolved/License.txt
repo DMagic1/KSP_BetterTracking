@@ -22,10 +22,20 @@ SOFTWARE.
 
 ----------------------------------------------
 
-The Clock icon is from Google Material Design icon set:
+The Clock, search, and close arrow icons are from Google Material Design icon set:
 
 https://github.com/google/material-design-icons
 
 It is released under the Apache Version 2.0 license
 
 https://www.apache.org/licenses/LICENSE-2.0.txt
+
+-----------------------------------------------
+
+The re-orderable list code is from the Unity UI Extensions project:
+
+https://bitbucket.org/UnityUIExtensions/unity-ui-extensions
+
+It is released under the BSD license:
+
+https://bitbucket.org/UnityUIExtensions/unity-ui-extensions/wiki/License
