@@ -42,6 +42,7 @@ namespace BetterTracking.Unity
             Button,
             Window,
             Background,
+            Input,
         }
 
         [SerializeField]
