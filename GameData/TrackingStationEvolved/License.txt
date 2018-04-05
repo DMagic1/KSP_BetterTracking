@@ -26,7 +26,7 @@ The Clock, search, and close arrow icons are from Google Material Design icon se
 
 https://github.com/google/material-design-icons
 
-It is released under the Apache Version 2.0 license
+They are released under the Apache Version 2.0 license
 
 https://www.apache.org/licenses/LICENSE-2.0.txt
 
