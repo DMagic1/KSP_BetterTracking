@@ -48,22 +48,18 @@ namespace BetterTracking
 
         private static int _bodyOrderMode = 0;
         private static int _typeOrderMode = 0;
+        private static int _stockOrderMode = 0;
 
         private static bool _bodyAscOrder = false;
         private static bool _typeAscOrder = false;
+        private static bool _stockAscOrder = false;
 
         public static int GetBodyOrder(int index, int fallback)
         {
             if (_bodyOrderList.Contains(index))
-            {
-                //Tracking_Utils.TrackingLog("Get Body Order - Key Found: {0} - Value {1} - Fallback: {2}", index, _bodyOrderList.IndexOf(index), fallback);
                 return _bodyOrderList.IndexOf(index);
-            }
             else
-            {
-                //Tracking_Utils.TrackingLog("Setting Body Order - Key Not Found: {0} - Fallback {1}", index, fallback);
                 _typeOrderList.Insert(fallback, index);
-            }
 
             return fallback;
         }
@@ -78,15 +74,13 @@ namespace BetterTracking
             {
                 if (old >= 0)
                     order = old + 1;
-
-                //Tracking_Utils.TrackingLog("Setting Body Order - Key Not Found: {0} - Value {1}", index, order);
+                
                 _bodyOrderList.Insert(order, index);
             }
             else
             {
                 if (old >= 0)
                     order = old;
-                //Tracking_Utils.TrackingLog("Setting Body Order - Key Found: {0} - Value {1}", index, order);
 
                 int current = _typeOrderList.IndexOf(index);
 
@@ -116,15 +110,9 @@ namespace BetterTracking
         public static void SetBodyPersistence(int index, bool isOn)
         {
             if (_bodyPersistence.ContainsKey(index))
-            {
-                //Tracking_Utils.TrackingLog("Setting Body Persistence - Key Found: {0} - Value {1}", index, isOn);
                 _bodyPersistence[index] = isOn;
-            }
             else
-            {
-                //Tracking_Utils.TrackingLog("Setting Body Persistence - Key Not Found: {0} - Value {1}", index, isOn);
                 _bodyPersistence.Add(index, isOn);
-            }
         }
         
         public static int GetTypeOrder(int index, int fallback)
@@ -147,8 +135,7 @@ namespace BetterTracking
             {
                 if (old >= 0)
                     order = old + 1;
-
-                //Tracking_Utils.TrackingLog("Setting Type Order - Key Not Found: {0} - Value {1}", index, order);
+                
                 _typeOrderList.Insert(order, index);
             }
             else
@@ -160,8 +147,7 @@ namespace BetterTracking
 
                 if (current > order)
                     order++;
-
-                //Tracking_Utils.TrackingLog("Setting Type Order - Key Found: {0} - Value {1}", index, order);
+                
                 _typeOrderList.Remove(index);
                 _typeOrderList.Insert(order, index);
             }
@@ -185,15 +171,9 @@ namespace BetterTracking
         public static void SetTypePersistence(int index, bool isOn)
         {
             if (_typePersistence.ContainsKey(index))
-            {
-                //Tracking_Utils.TrackingLog("Setting Type Persistence - Key Found: {0} - Value {1}", index, isOn);
                 _typePersistence[index] = isOn;
-            }
             else
-            {
-                //Tracking_Utils.TrackingLog("Setting Body Persistence - Key Not Found: {0} - Value {1}", index, isOn);
                 _typePersistence.Add(index, isOn);
-            }
         }
         
         public static int SortMode
@@ -214,6 +194,12 @@ namespace BetterTracking
             set { _typeOrderMode = value; }
         }
 
+        public static int StockOrderMode
+        {
+            get { return _stockOrderMode; }
+            set { _stockOrderMode = value; }
+        }
+
         public static bool BodyAscOrder
         {
             get { return _bodyAscOrder; }
@@ -224,6 +210,12 @@ namespace BetterTracking
         {
             get { return _typeAscOrder; }
             set { _typeAscOrder = value; }
+        }
+
+        public static bool StockAscOrder
+        {
+            get { return _stockAscOrder; }
+            set { _stockAscOrder = value; }
         }
 
         public override void OnAwake()
@@ -306,11 +298,17 @@ namespace BetterTracking
             if (node.HasValue("TypeOrderMode"))
                 node.TryGetValue("TypeOrderMode", ref _typeOrderMode);
 
+            if (node.HasValue("StockOrderMode"))
+                node.TryGetValue("StockOrderMode", ref _stockOrderMode);
+
             if (node.HasValue("BodyAscOrder"))
                 node.TryGetValue("BodyAscOrder", ref _bodyAscOrder);
 
             if (node.HasValue("TypeAscOrder"))
                 node.TryGetValue("TypeAscOrder", ref _typeAscOrder);
+
+            if (node.HasValue("StockAscOrder"))
+                node.TryGetValue("StockAscOrder", ref _stockAscOrder);
 
             FallbackBodyCheck();
         }
@@ -329,9 +327,11 @@ namespace BetterTracking
 
             node.AddValue("BodyOrderMode", _bodyOrderMode);
             node.AddValue("TypeOrderMode", _typeOrderMode);
+            node.AddValue("StockOrderMode", _stockOrderMode);
 
             node.AddValue("BodyAscOrder", _bodyAscOrder);
             node.AddValue("TypeAscOrder", _typeAscOrder);
+            node.AddValue("StockAscOrder", _stockAscOrder);
         }
     }
 }
