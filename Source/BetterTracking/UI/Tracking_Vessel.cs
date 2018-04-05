@@ -41,6 +41,7 @@ namespace BetterTracking
         private VesselIconSprite _iconSprite;
         private VesselItem _vesselUI;
         private SubVesselItem _subVesselUI;
+        private FullVesselItem _fullVesselUI;
 
         public Tracking_Vessel(TrackingStationWidget widget)
         {
@@ -57,6 +58,8 @@ namespace BetterTracking
                 _vesselUI.SelectVessel();
             else if (_subVesselUI != null)
                 _subVesselUI.SelectVessel();
+            else if (_fullVesselUI != null)
+                _fullVesselUI.SelectVessel();
         }
         
         public Vessel Vessel
@@ -148,11 +151,7 @@ namespace BetterTracking
         public void OnToggle(bool isOn)
         {
             if (_vesselWidget != null)
-            {
-                //Tracking_Utils.TrackingLog("Pass through click: {0} - {1}", _vesselWidget.vessel.vesselName, isOn);
                 _vesselWidget.toggle.onValueChanged.Invoke(isOn);
-                //_vesselWidget.toggle.isOn = isOn;
-            }
         }
 
         public void OnVesselEdit()
@@ -171,6 +170,11 @@ namespace BetterTracking
         public void SetSubUI(SubVesselItem item)
         {
             _subVesselUI = item;
+        }
+
+        public void SetFullUI(FullVesselItem vessel)
+        {
+            _fullVesselUI = vessel;
         }
     }
 }
