@@ -27,6 +27,7 @@ THE SOFTWARE.
 */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -81,11 +82,11 @@ namespace BetterTracking
 
             PSystemBody pBody = GetBody(body.bodyName, PSystemManager.Instance.systemPrefab.rootBody);
 
-            GameObject obj = GameObject.Instantiate(pBody.scaledVersion);
-            GameObject.DestroyImmediate(obj.GetComponent<ScaledSpaceFader>());
-            GameObject.DestroyImmediate(obj.GetComponent<MaterialSetDirection>());
-            GameObject.DestroyImmediate(obj.GetComponent<SphereCollider>());
-            GameObject.DestroyImmediate(GameObject.Find(obj.name + "/Atmosphere"));
+            GameObject obj = UnityEngine.Object.Instantiate(pBody.scaledVersion);
+            UnityEngine.Object.DestroyImmediate(obj.GetComponent<ScaledSpaceFader>());
+            UnityEngine.Object.DestroyImmediate(obj.GetComponent<MaterialSetDirection>());
+            UnityEngine.Object.DestroyImmediate(obj.GetComponent<SphereCollider>());
+            UnityEngine.Object.DestroyImmediate(GameObject.Find(obj.name + "/Atmosphere"));
 
             RDPlanetListItemContainer planet = GameObject.Instantiate(Tracking_RDWatch.RDPlanetPrefab);
             planet.Setup(body.bodyName, body.displayName, obj, false, 0, moon ? 0.8f : 1, 44, 0, null);
@@ -103,7 +104,7 @@ namespace BetterTracking
             rect.anchoredPosition = new Vector2(4, -2);
             rect.sizeDelta = new Vector2(0, -4);
 
-            GameObject.DestroyImmediate(planet.label_planetName.gameObject);
+            UnityEngine.Object.DestroyImmediate(planet.label_planetName.gameObject);
 
             if (!Tracking_Controller.Instance.LightAdded)
             {
@@ -154,8 +155,6 @@ namespace BetterTracking
                 var pair = values.ElementAt(i);
 
                 sb.AppendFormat("{0},{1}|", pair.Key, pair.Value);
-
-                //TrackingLog("Dictionary Key: {0} - Value: {1}", pair.Key, pair.Value);
             }
 
             if (sb.Length > 1)
@@ -163,8 +162,6 @@ namespace BetterTracking
                 if (sb[sb.Length - 1] == '|')
                     sb.Length -= 1;
             }
-
-            //TrackingLog("Save Dictionary: {0}", sb.ToString());
 
             return sb.ToStringAndRelease();
         }
@@ -178,8 +175,6 @@ namespace BetterTracking
             for (int i = 0; i < count; i++)
             {
                 sb.AppendFormat("{0},", list[i]);
-
-                //TrackingLog("Order List: {0} - Value: {1}", i, list[i]);
             }
             
             if (sb.Length > 1)
@@ -187,8 +182,6 @@ namespace BetterTracking
                 if (sb[sb.Length - 1] == ',')
                     sb.Length -= 1;
             }
-
-            //TrackingLog("Save List: {0}", sb.ToString());
 
             return sb.ToStringAndRelease();
         }
@@ -276,6 +269,17 @@ namespace BetterTracking
             }
 
             return "";
+        }
+
+        public static bool StringContains(this string source, string compare, StringComparison comparer)
+        {
+            if (string.IsNullOrEmpty(source))
+                return false;
+
+            if (string.IsNullOrEmpty(compare))
+                return false;
+
+            return source.IndexOf(compare, comparer) >= 0;
         }
 
         //Extension taken from:
