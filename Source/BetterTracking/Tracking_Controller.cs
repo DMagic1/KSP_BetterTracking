@@ -159,13 +159,8 @@ namespace BetterTracking
 
         private IEnumerator WaitForTrackingStation()
         {
-            WaitForSeconds wait = new WaitForSeconds(0.2f);
-            
-            int count = 0;
-
             while (_TrackingStation == null)
             {
-                count++;
                 var tracking = FindObjectsOfType<SpaceTracking>();
 
                 if (tracking != null)
