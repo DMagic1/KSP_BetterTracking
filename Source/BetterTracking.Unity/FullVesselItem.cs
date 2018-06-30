@@ -29,11 +29,12 @@ THE SOFTWARE.
 
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using BetterTracking.Unity.Interface;
 
 namespace BetterTracking.Unity
 {
-    public class FullVesselItem : MonoBehaviour
+    public class FullVesselItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField]
         private TextHandler m_NameText = null;
@@ -113,6 +114,18 @@ namespace BetterTracking.Unity
 
             if (isOn)
                 _vesselInterface.OnToggle(isOn);
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (_vesselInterface != null)
+                _vesselInterface.OnMouseChange(eventData, true);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (_vesselInterface != null)
+                _vesselInterface.OnMouseChange(eventData, false);
         }
 
         public void VesselEdit()
