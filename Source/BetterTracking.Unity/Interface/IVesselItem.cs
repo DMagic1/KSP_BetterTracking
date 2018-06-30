@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace BetterTracking.Unity.Interface
 {
@@ -53,6 +54,8 @@ namespace BetterTracking.Unity.Interface
         void OnVesselEdit();
 
         void OnVesselSelect();
+
+        void OnMouseChange(PointerEventData data, bool enter);
 
         void SetUI(VesselItem vessel);
 

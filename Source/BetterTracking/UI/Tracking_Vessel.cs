@@ -32,6 +32,7 @@ using BetterTracking.Unity.Interface;
 using UnityEngine;
 using KSP.UI.Screens;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace BetterTracking
 {
@@ -42,6 +43,7 @@ namespace BetterTracking
         private VesselItem _vesselUI;
         private SubVesselItem _subVesselUI;
         private FullVesselItem _fullVesselUI;
+        private bool _hover;
 
         public Tracking_Vessel(TrackingStationWidget widget)
         {
@@ -146,6 +148,17 @@ namespace BetterTracking
 
             if (_iconSprite.vesselType != _vesselWidget.vessel.vesselType)
                 _iconSprite.SetType(_vesselWidget.vessel.vesselType);
+        }
+
+        public void OnMouseChange(PointerEventData eventData, bool enter)
+        {
+            if (_vesselWidget == null)
+                return;
+
+            if (enter)
+                _vesselWidget.OnMouseEnter(eventData);
+            else
+                _vesselWidget.OnMouseExit(eventData);
         }
 
         public void OnToggle(bool isOn)
