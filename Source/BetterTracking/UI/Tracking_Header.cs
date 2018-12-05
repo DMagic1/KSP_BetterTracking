@@ -78,6 +78,9 @@ namespace BetterTracking
 
         public void Update(bool dragging)
         {
+            if (_headerImage == null)
+                return;
+
             if (dragging)
             {
                 if (!_pushedForward)
