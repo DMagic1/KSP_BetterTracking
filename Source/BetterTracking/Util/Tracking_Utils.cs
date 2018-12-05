@@ -80,32 +80,40 @@ namespace BetterTracking
             if (body == null || body.scaledBody == null || Tracking_RDWatch.RDPlanetPrefab == null)
                 return null;
 
-            PSystemBody pBody = GetBody(body.bodyName, PSystemManager.Instance.systemPrefab.rootBody);
+            string bodyName = body.bodyName;
+
+            if (body == FlightGlobals.GetHomeBody())
+                bodyName = "Kerbin";
+
+            PSystemBody pBody = GetBody(bodyName, PSystemManager.Instance.systemPrefab.rootBody);
+            
+            if (pBody == null)
+                return null;
 
             GameObject obj = UnityEngine.Object.Instantiate(pBody.scaledVersion);
             UnityEngine.Object.DestroyImmediate(obj.GetComponent<ScaledSpaceFader>());
             UnityEngine.Object.DestroyImmediate(obj.GetComponent<MaterialSetDirection>());
             UnityEngine.Object.DestroyImmediate(obj.GetComponent<SphereCollider>());
             UnityEngine.Object.DestroyImmediate(GameObject.Find(obj.name + "/Atmosphere"));
-
+            
             RDPlanetListItemContainer planet = GameObject.Instantiate(Tracking_RDWatch.RDPlanetPrefab);
             planet.Setup(body.bodyName, body.displayName, obj, false, 0, moon ? 0.8f : 1, 44, 0, null);
             planet.SetSelectionCallback(new RDPlanetListItemContainer.SelectionCallback(FakeCallback));
-
+            
             RectTransform pRect = planet.transform as RectTransform;
-
+            
             pRect.anchoredPosition = new Vector2(2, -2);
             pRect.sizeDelta = new Vector2(-4, -4);
-
+            
             RawImage raw = planet.planetRawImage;
             RectTransform rect = raw.transform as RectTransform;
-
+            
             rect.pivot = new Vector2(0, 1);
             rect.anchoredPosition = new Vector2(4, -2);
             rect.sizeDelta = new Vector2(0, -4);
-
+            
             UnityEngine.Object.DestroyImmediate(planet.label_planetName.gameObject);
-
+            
             if (!Tracking_Controller.Instance.LightAdded)
             {
                 Light light = Tracking_Controller.Instance.NewTrackingList.AddComponent<Light>();
