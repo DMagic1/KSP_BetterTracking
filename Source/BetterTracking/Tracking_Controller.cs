@@ -1042,6 +1042,20 @@ namespace BetterTracking
                             CelestialBody subSubMoon = subMoon.orbitingBodies[l];
 
                             moons.Add(subSubMoon);
+
+                            for (int m = 0; m < subSubMoon.orbitingBodies.Count; m++)
+                            {
+                                CelestialBody subSubSubMoon = subSubMoon.orbitingBodies[m];
+
+                                moons.Add(subSubSubMoon);
+
+                                for (int n = 0; n < subSubSubMoon.orbitingBodies.Count; n++)
+                                {
+                                    CelestialBody subSubSubSubMoon = subSubSubMoon.orbitingBodies[n];
+
+                                    moons.Add(subSubSubSubMoon);
+                                }
+                            }
                         }
                     }
                 }
