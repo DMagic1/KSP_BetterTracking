@@ -37,8 +37,12 @@ namespace BetterTracking.Unity.Interface
 
         string HeaderInfo { get; }
 
+        bool OrbitsOn { get; }
+
         GameObject HeaderImage { get; }
 
         void Update(bool dragging);
+
+        void OnToggleOrbits();
     }
 }

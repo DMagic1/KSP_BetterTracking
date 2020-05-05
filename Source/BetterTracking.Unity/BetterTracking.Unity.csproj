@@ -54,6 +54,10 @@
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.UIModule">
       <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed\UnityEngine.UIModule.dll</HintPath>
       <Private>False</Private>
@@ -87,6 +91,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y "$(TargetPath)" "C:\Users\DMagic\Documents\KSP\Modlets\BetterTracking\Unity\Better Tracking\Assets\Plugins\"</PostBuildEvent>
+    <PostBuildEvent>::copy /y "$(TargetPath)" "C:\Users\DMagic\Documents\KSP\Modlets\BetterTracking\Unity\Better Tracking\Assets\Plugins\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

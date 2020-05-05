@@ -37,18 +37,25 @@ namespace BetterTracking
         private string _title;
         private int _vesselCount;
         private int _mode;
+        private bool _orbitsOn = true;
         private GameObject _headerImage;
         private RectTransform _headerRect;
 
         private bool _pushedForward;
         private float _cachedZ;
 
-        public Tracking_SubHeader(string title, int vesselCount, GameObject obj, int mode)
+        public delegate void ToggleOrbits(bool orbitOn);
+
+        private ToggleOrbits _onToggleOrbits;
+
+        public Tracking_SubHeader(string title, int vesselCount, GameObject obj, int mode, ToggleOrbits toggle)
         {
             _title = title;
             _vesselCount = vesselCount;
             _headerImage = obj;
             _mode = mode;
+
+            _onToggleOrbits = toggle;
 
             _headerRect = obj.transform as RectTransform;
         }
@@ -63,9 +70,21 @@ namespace BetterTracking
             get { return _vesselCount.ToString(); }
         }
 
+        public bool OrbitsOn
+        {
+            get { return _orbitsOn; }
+        }
+
         public GameObject HeaderImage
         {
             get { return _headerImage; }
+        }
+
+        public void OnToggleOrbits()
+        {
+            _orbitsOn = !_orbitsOn;
+
+            _onToggleOrbits(_orbitsOn);
         }
 
         public void Update(bool dragging)

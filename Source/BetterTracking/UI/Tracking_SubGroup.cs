@@ -60,7 +60,7 @@ namespace BetterTracking
 
         private void AddHeader()
         {
-            _header = new Tracking_SubHeader(_title, _vesselCount, Tracking_Utils.GetHeaderObject(_body, VesselType.Unknown, _mode, true), (int)_mode);
+            _header = new Tracking_SubHeader(_title, _vesselCount, Tracking_Utils.GetHeaderObject(_body, VesselType.Unknown, _mode, true), (int)_mode, ToggleOrbits);
         }
 
         private void AddVessels(List<TrackingStationWidget> vessels)
@@ -79,7 +79,17 @@ namespace BetterTracking
 
             _vessels.Add(vessel);
         }
-        
+
+        private void ToggleOrbits(bool OrbitsOn)
+        {
+            for (int i = _vessels.Count - 1; i >= 0; i--)
+            {
+                Tracking_Vessel vessel = (Tracking_Vessel)_vessels[i];
+
+                vessel.OnToggleAllOrbits(OrbitsOn);
+            }
+        }
+
         public IVesselItem FindVessel(Vessel vessel)
         {
             for (int i = _vessels.Count - 1; i >= 0; i--)

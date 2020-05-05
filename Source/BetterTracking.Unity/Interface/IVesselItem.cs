@@ -41,6 +41,8 @@ namespace BetterTracking.Unity.Interface
 
         string VesselInfo { get; }
 
+        bool ShowOrbit { get; }
+
         Sprite VesselIcon { get; }
 
         GameObject VesselImage { get; }
@@ -52,6 +54,8 @@ namespace BetterTracking.Unity.Interface
         void OnToggle(bool isOn);
 
         void OnVesselEdit();
+
+        void OnToggleOrbit();
 
         void OnVesselSelect();
 

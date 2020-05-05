@@ -44,6 +44,7 @@ namespace BetterTracking
         private SubVesselItem _subVesselUI;
         private FullVesselItem _fullVesselUI;
         private bool _hover;
+        private bool _orbitOn = true;
 
         public Tracking_Vessel(TrackingStationWidget widget)
         {
@@ -62,6 +63,11 @@ namespace BetterTracking
                 _subVesselUI.SelectVessel();
             else if (_fullVesselUI != null)
                 _fullVesselUI.SelectVessel();
+
+            if (!_orbitOn)
+            {
+                OnToggleOrbit();
+            }
         }
         
         public Vessel Vessel
@@ -105,6 +111,19 @@ namespace BetterTracking
                     return _vesselWidget.textInfo.text;
 
                 return "";
+            }
+        }
+
+        public bool ShowOrbit
+        {
+            get
+            {
+                if (_vesselWidget == null || _vesselWidget.vessel == null || _vesselWidget.vessel.orbitRenderer == null)
+                    return true;
+
+                _orbitOn = _vesselWidget.vessel.orbitRenderer.drawMode == OrbitRendererBase.DrawMode.REDRAW_AND_RECALCULATE;
+
+                return _orbitOn;
             }
         }
 
@@ -174,7 +193,48 @@ namespace BetterTracking
 
             _vesselWidget.vessel.RenameVessel();
         }
-        
+
+        public void OnToggleAllOrbits(bool orbitOn)
+        {
+            if (orbitOn && !_orbitOn)
+                OnToggleOrbit();
+            else if (!orbitOn && _orbitOn)
+                OnToggleOrbit();
+        }
+
+        public void OnToggleOrbit()
+        {
+            if (_vesselWidget == null || _vesselWidget.vessel == null || _vesselWidget.vessel.orbitRenderer == null)
+                return;
+
+            if (Tracking_Controller.Instance.SelectedVessel(_vesselWidget.vessel))
+            {
+                _orbitOn = true;
+            }
+            else
+            {
+                if (_vesselWidget.vessel.orbitRenderer.drawMode == OrbitRendererBase.DrawMode.OFF)
+                {
+                    _vesselWidget.vessel.orbitRenderer.drawMode = OrbitRendererBase.DrawMode.REDRAW_AND_RECALCULATE;
+                    _vesselWidget.vessel.orbitRenderer.drawNodes = true;
+                    _orbitOn = true;
+                }
+                else
+                {
+                    _vesselWidget.vessel.orbitRenderer.drawMode = OrbitRendererBase.DrawMode.OFF;
+                    _vesselWidget.vessel.orbitRenderer.drawNodes = false;
+                    _orbitOn = false;
+                }
+            }
+
+            if (_vesselUI != null)
+                _vesselUI.ToggleOrbitUI(_orbitOn);
+            else if (_subVesselUI != null)
+                _subVesselUI.ToggleOrbitUI(_orbitOn);
+            else if (_fullVesselUI != null)
+                _fullVesselUI.ToggleOrbitUI(_orbitOn);
+        }
+
         public void SetUI(VesselItem item)
         {
             _vesselUI = item;

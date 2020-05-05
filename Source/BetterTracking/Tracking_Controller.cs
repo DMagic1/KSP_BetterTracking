@@ -1114,6 +1114,14 @@ namespace BetterTracking
             return types;
         }
 
+        public bool SelectedVessel(Vessel vessel)
+        {
+            if (_TrackingStation == null || _TrackingStation.SelectedVessel == null)
+                return false;
+
+            return _TrackingStation.SelectedVessel == vessel;
+        }
+
         public int CurrentMode
         {
             get { return (int)_CurrentMode; }

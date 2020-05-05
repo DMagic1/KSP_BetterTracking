@@ -56,7 +56,7 @@ namespace BetterTracking
             _type = type;
 
             int _subVesselCount = 0;
-                
+
             if (subGroups != null && subGroups.Count > 0)
             {
                 for (int i = subGroups.Count - 1; i >= 0; i--)
@@ -74,7 +74,7 @@ namespace BetterTracking
 
         private void AddHeader(int vessels, int subVessels)
         {
-            _header = new Tracking_Header(_title, vessels, subVessels, Tracking_Utils.GetHeaderObject(_body, _type, _mode, false), (int)_mode);
+            _header = new Tracking_Header(_title, vessels, subVessels, Tracking_Utils.GetHeaderObject(_body, _type, _mode, false), (int)_mode, ToggleOrbits);
         }
 
         private void AddSubGroups(List<Tracking_MoonGroup> subGroups)
@@ -112,6 +112,16 @@ namespace BetterTracking
             Tracking_Vessel vessel = new Tracking_Vessel(widget);
 
             _vessels.Add(vessel);
+        }
+
+        private void ToggleOrbits(bool OrbitsOn)
+        {
+            for (int i = _vessels.Count - 1; i >= 0; i--)
+            {
+                Tracking_Vessel vessel = (Tracking_Vessel)_vessels[i];
+
+                vessel.OnToggleAllOrbits(OrbitsOn);
+            }
         }
 
         public IVesselItem FindVessel(Vessel vessel)

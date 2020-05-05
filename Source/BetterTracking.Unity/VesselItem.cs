@@ -52,7 +52,13 @@ namespace BetterTracking.Unity
         private Sprite m_DoubleConnector = null;
         [SerializeField]
         private Toggle m_Toggle = null;
-        
+        [SerializeField]
+        private Sprite m_OrbitOnIcon = null;
+        [SerializeField]
+        private Sprite m_OrbitOffIcon = null;
+        [SerializeField]
+        private Image m_OrbitIcon = null;
+
         private IVesselItem _vesselInterface;
 
         private void Awake()
@@ -107,13 +113,27 @@ namespace BetterTracking.Unity
 
             m_Toggle.onValueChanged.AddListener(new UnityEngine.Events.UnityAction<bool>(OnVesselToggle));
         }
-        
+
         private void AssignVesselSprite(GameObject obj)
         {
             if (obj == null || m_VesselIcon == null)
                 return;
 
             obj.transform.SetParent(m_VesselIcon, false);
+        }
+
+        public void ToggleOrbitUI(bool orbitOn)
+        {
+            if (m_OrbitIcon != null)
+                m_OrbitIcon.sprite = orbitOn ? m_OrbitOnIcon : m_OrbitOffIcon;
+        }
+
+        public void ToggleOrbit()
+        {
+            if (_vesselInterface == null)
+                return;
+
+            _vesselInterface.OnToggleOrbit();
         }
 
         public void OnVesselToggle(bool isOn)

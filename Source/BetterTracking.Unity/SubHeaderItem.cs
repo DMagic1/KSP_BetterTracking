@@ -49,6 +49,12 @@ namespace BetterTracking.Unity
         private Sprite m_DoubleConnector = null;
         [SerializeField]
         private Toggle m_HeaderToggle = null;
+        [SerializeField]
+        private Sprite m_OrbitOnIcon = null;
+        [SerializeField]
+        private Sprite m_OrbitOffIcon = null;
+        [SerializeField]
+        private Image m_OrbitIcon = null;
 
         private ISubHeaderItem _headerInterface;
         private VesselSubGroup _parent;
@@ -97,6 +103,19 @@ namespace BetterTracking.Unity
                 return;
 
             _parent.ToggleGroup(isOn);
+        }
+
+        public void ToggleOrbits()
+        {
+            _headerInterface.OnToggleOrbits();
+
+            ToggleOrbitUI(_headerInterface.OrbitsOn);
+        }
+
+        private void ToggleOrbitUI(bool orbitOn)
+        {
+            if (m_OrbitIcon != null)
+                m_OrbitIcon.sprite = orbitOn ? m_OrbitOnIcon : m_OrbitOffIcon;
         }
 
         private void Update()

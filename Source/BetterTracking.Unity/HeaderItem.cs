@@ -45,6 +45,12 @@ namespace BetterTracking.Unity
         private Toggle m_HeaderToggle = null;
         [SerializeField]
         private GameObject m_DragHandle = null;
+        [SerializeField]
+        private Sprite m_OrbitOnIcon = null;
+        [SerializeField]
+        private Sprite m_OrbitOffIcon = null;
+        [SerializeField]
+        private Image m_OrbitIcon = null;
 
         private IHeaderItem _headerInterface;
         private VesselGroup _parent;
@@ -111,6 +117,19 @@ namespace BetterTracking.Unity
         {
             if (_parent != null)
                 _parent.UpdateOrder(order, old_index);
+        }
+
+        public void ToggleOrbits()
+        {
+            _headerInterface.OnToggleOrbits();
+
+            ToggleOrbitUI(_headerInterface.OrbitsOn);
+        }
+
+        private void ToggleOrbitUI(bool orbitOn)
+        {
+            if (m_OrbitIcon != null)
+                m_OrbitIcon.sprite = orbitOn ? m_OrbitOnIcon : m_OrbitOffIcon;
         }
 
         private void Update()
