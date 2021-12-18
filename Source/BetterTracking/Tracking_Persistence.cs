@@ -39,7 +39,7 @@ namespace BetterTracking
         private static Dictionary<int, bool> _bodyPersistence = new Dictionary<int, bool>();
 
         private static List<int> _bodyOrderList = null;
-        private static List<int> _typeOrderList = new List<int>(13) { 7, 11, 3, 8, 6, 5, 4, 9, 10, 12, 1, 0, 2 };
+        private static List<int> _typeOrderList = new List<int>(15) { 7, 11, 3, 8, 6, 5, 4, 9, 10, 13, 14, 12, 1, 0, 2 };
 
         //Key is vessel type index; value is expanded status
         private static Dictionary<int, bool> _typePersistence = new Dictionary<int, bool>();

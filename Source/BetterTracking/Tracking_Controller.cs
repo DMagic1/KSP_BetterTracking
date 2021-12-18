@@ -1013,16 +1013,116 @@ namespace BetterTracking
 
         private List<Tracking_BodyGroup> OrderBodies()
         {
-            List<Tracking_BodyGroup> bodies = new List<Tracking_BodyGroup>();
-
             var allBodies = FlightGlobals.Bodies.Where(b => b.referenceBody == Planetarium.fetch.Sun && b.referenceBody != b);
 
             var orderedBodies = allBodies.OrderBy(b => b.orbit.semiMajorAxis).ToList();
 
-            for (int i = 0; i < orderedBodies.Count; i++)
+            List<Tracking_BodyGroup> bodies = RecursiveCelestialBodies(orderedBodies);
+
+            //for (int i = 0; i < orderedBodies.Count; i++)
+            //{
+            //    CelestialBody body = orderedBodies[i];
+
+            //    List<CelestialBody> moons = new List<CelestialBody>();
+
+            //    for (int j = 0; j < body.orbitingBodies.Count; j++)
+            //    {
+            //        CelestialBody moon = body.orbitingBodies[j];
+
+            //        moons.Add(moon);
+
+            //        for (int k = 0; k < moon.orbitingBodies.Count; k++)
+            //        {
+            //            CelestialBody subMoon = moon.orbitingBodies[k];
+
+            //            moons.Add(subMoon);
+
+            //            for (int l = 0; l < subMoon.orbitingBodies.Count; l++)
+            //            {
+            //                CelestialBody subSubMoon = subMoon.orbitingBodies[l];
+
+            //                moons.Add(subSubMoon);
+
+            //                for (int m = 0; m < subSubMoon.orbitingBodies.Count; m++)
+            //                {
+            //                    CelestialBody subSubSubMoon = subSubMoon.orbitingBodies[m];
+
+            //                    moons.Add(subSubSubMoon);
+
+            //                    for (int n = 0; n < subSubSubMoon.orbitingBodies.Count; n++)
+            //                    {
+            //                        CelestialBody subSubSubSubMoon = subSubSubMoon.orbitingBodies[n];
+
+            //                        moons.Add(subSubSubSubMoon);
+            //                    }
+            //                }
+            //            }
+            //        }
+            //    }
+
+            //    bodies.Add(new Tracking_BodyGroup() { Body = body, Moons = moons });
+            //}
+
+            bool missingHome = true;
+
+            for (int i = bodies.Count - 1; i >= 0; i--)
             {
-                CelestialBody body = orderedBodies[i];
-                
+                if (bodies[i].Body == FlightGlobals.GetHomeBody())
+                {
+                    missingHome = false;
+                    break;
+                }
+            }
+
+            if (missingHome)
+            {
+                List<Tracking_BodyGroup> missingHomeBodies = RecursiveCelestialBodies(new List<CelestialBody>() { FlightGlobals.GetHomeBody() });
+
+                bodies.InsertRange(0, missingHomeBodies);
+            }
+            else
+            {
+                for (int i = bodies.Count - 1; i >= 0; i--)
+                {
+                    Tracking_BodyGroup body = bodies[i];
+
+                    if (body.Body != Planetarium.fetch.Home)
+                        continue;
+
+                    bodies.RemoveAt(i);
+                    bodies.Insert(0, body);
+                }
+            }
+
+            bodies.Insert(1, new Tracking_BodyGroup() { Body = Planetarium.fetch.Sun, Moons = new List<CelestialBody>() });
+
+            List<Tracking_BodyGroup> ordered = new List<Tracking_BodyGroup>();
+
+            for (int i = 0; i < Tracking_Persistence.BodyOrderList.Count; i++)
+            {
+                for (int j = bodies.Count - 1; j >= 0; j--)
+                {
+                    int index = bodies[j].Body.flightGlobalsIndex;
+
+                    if (index != Tracking_Persistence.BodyOrderList[i])
+                        continue;
+                    
+                    ordered.Add(bodies[j]);
+                    break;
+                }
+            }
+
+            return ordered;
+        }
+
+        private List<Tracking_BodyGroup> RecursiveCelestialBodies(List<CelestialBody> bodies)
+        {
+            List<Tracking_BodyGroup> trackingBodies = new List<Tracking_BodyGroup>();
+
+            for (int i = 0; i < bodies.Count; i++)
+            {
+                CelestialBody body = bodies[i];
+
                 List<CelestialBody> moons = new List<CelestialBody>();
 
                 for (int j = 0; j < body.orbitingBodies.Count; j++)
@@ -1060,39 +1160,10 @@ namespace BetterTracking
                     }
                 }
 
-                bodies.Add(new Tracking_BodyGroup() { Body = body, Moons = moons });
+                trackingBodies.Add(new Tracking_BodyGroup() { Body = body, Moons = moons });
             }
 
-            for (int i = bodies.Count - 1; i >= 0; i--)
-            {
-                Tracking_BodyGroup body = bodies[i];
-
-                if (body.Body != Planetarium.fetch.Home)
-                    continue;
-
-                bodies.RemoveAt(i);
-                bodies.Insert(0, body);
-            }
-
-            bodies.Insert(1, new Tracking_BodyGroup() { Body = Planetarium.fetch.Sun, Moons = new List<CelestialBody>() });
-
-            List<Tracking_BodyGroup> ordered = new List<Tracking_BodyGroup>();
-
-            for (int i = 0; i < Tracking_Persistence.BodyOrderList.Count; i++)
-            {
-                for (int j = bodies.Count - 1; j >= 0; j--)
-                {
-                    int index = bodies[j].Body.flightGlobalsIndex;
-
-                    if (index != Tracking_Persistence.BodyOrderList[i])
-                        continue;
-                    
-                    ordered.Add(bodies[j]);
-                    break;
-                }
-            }
-
-            return ordered;
+            return trackingBodies;
         }
 
         private List<VesselType> OrderTypes()
@@ -1101,7 +1172,7 @@ namespace BetterTracking
 
             for (int i = 0; i < Tracking_Persistence.TypeOrderList.Count; i++)
             {
-                for (int j = 13 - 1; j >= 0; j--)
+                for (int j = 15 - 1; j >= 0; j--)
                 {
                     if (j != Tracking_Persistence.TypeOrderList[i])
                         continue;
