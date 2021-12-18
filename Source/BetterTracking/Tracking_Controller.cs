@@ -138,6 +138,7 @@ namespace BetterTracking
             GameEvents.onNewVesselCreated.Add(new EventData<Vessel>.OnEvent(OnVesselCreate));
             GameEvents.onVesselDestroy.Add(new EventData<Vessel>.OnEvent(OnVesselDestroy));
             GameEvents.onKnowledgeChanged.Add(new EventData<GameEvents.HostedFromToAction<IDiscoverable, DiscoveryLevels>>.OnEvent(OnKnowledgeChange));
+            GameEvents.OnMapViewFiltersModified.Add(new EventData<MapViewFiltering.VesselTypeFilter>.OnEvent(OnMapViewFiltersModified));
 
             _CurrentMode = (Tracking_Mode)Tracking_Persistence.SortMode;
 
@@ -203,6 +204,8 @@ namespace BetterTracking
             _NewTrackingList.transform.SetParent(_ListParent, false);
 
             _TrackingStation.listContainer.SetParent(null, false);
+
+            _TrackingStation.tglTrackedObjects.onValueChanged.AddListener(new UnityAction<bool>(OnVesselListToggle));
 
             _OrderedBodyList = OrderBodies();
             _OrderedTypeList = OrderTypes();
@@ -280,7 +283,7 @@ namespace BetterTracking
 
             if (listRect != null)
             {
-                listRect.anchoredPosition = new Vector2(5, -96);
+                listRect.anchoredPosition = new Vector2(5, -142);
                 listRect.sizeDelta = new Vector2(280, -177);
             }
 
@@ -288,7 +291,7 @@ namespace BetterTracking
 
             if (headerRect != null)
             {
-                headerRect.anchoredPosition = new Vector2(5, -72);
+                headerRect.anchoredPosition = new Vector2(5, -108);
                 headerRect.sizeDelta = new Vector2(266, 25);
             }
 
@@ -328,6 +331,14 @@ namespace BetterTracking
             _instantStart = true;
 
             if (_TrackedVesselWidgets == null || _TrackedVesselWidgets.Count <= 1)
+                StartCoroutine(WaitForUpdate(3));
+        }
+
+        private void OnMapViewFiltersModified(MapViewFiltering.VesselTypeFilter filterType)
+        {
+            _instantStart = true;
+
+            //if (_TrackedVesselWidgets == null || _TrackedVesselWidgets.Count <= 1)
                 StartCoroutine(WaitForUpdate(3));
         }
 
@@ -416,6 +427,26 @@ namespace BetterTracking
                 SearchListUpdate();
 
             _widgetAwakeSet = false;
+        }
+
+        private void OnVesselListToggle(bool toggle)
+        {
+            StartCoroutine(OnVesselListReset(2));
+        }
+
+        private IEnumerator OnVesselListReset(int frames)
+        {
+            int time = 0;
+
+            while (time < frames)
+            {
+                time++;
+
+                yield return new WaitForEndOfFrame();
+            }
+
+            if (_NewTrackingList != null)
+                UpdateScrollRect(_NewTrackingList.transform as RectTransform);
         }
 
         public void UpdateScrollRect(RectTransform rect)
