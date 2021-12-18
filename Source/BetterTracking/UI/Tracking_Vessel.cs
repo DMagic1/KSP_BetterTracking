@@ -210,6 +210,8 @@ namespace BetterTracking
             if (Tracking_Controller.Instance.SelectedVessel(_vesselWidget.vessel))
             {
                 _orbitOn = true;
+                _vesselWidget.vessel.orbitRenderer.drawMode = OrbitRendererBase.DrawMode.REDRAW_AND_RECALCULATE;
+                _vesselWidget.vessel.orbitRenderer.drawNodes = true;
             }
             else
             {
