@@ -102,7 +102,7 @@ namespace BetterTracking
 
         private IEnumerator WaitForTrackingList()
         {
-            WaitForSeconds wait = new WaitForSeconds(0.1f);
+            //WaitForSeconds wait = new WaitForSeconds(0.1f);
 
             SpaceTracking _TrackingStation = null;
 
@@ -111,7 +111,7 @@ namespace BetterTracking
                 _TrackingStation = GameObject.FindObjectOfType<SpaceTracking>();
 
                 if (_TrackingStation == null)
-                    yield return wait;
+                    yield return null;
             }
 
             processSprites(_TrackingStation);
@@ -166,13 +166,19 @@ namespace BetterTracking
 
                 if (o == null)
                     continue;
-                
+
                 if (o.name == "HeaderGroup")
+                {
                     _groupPrefab = o;
+                }
                 else if (o.name == "SortHeader")
+                {
                     _sortHeaderPrefab = o;
+                }
                 else if (o.name == "FullVessel")
+                {
                     _fullVesselPrefab = o;
+                }
 
                 processTMP(o);
                 processInputFields(o);
