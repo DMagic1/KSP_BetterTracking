@@ -193,6 +193,10 @@ namespace BetterTracking
 
             _VesselToggleGroup = Instantiate(_TrackingStation.listToggleGroup);
 
+            GameObject dummyObj = new GameObject("dummy", typeof(Toggle));
+            Toggle dummyToggle = dummyObj.GetComponent<Toggle>();
+            dummyToggle.group = _VesselToggleGroup;
+
             _OldTrackingList = _TrackingStation.listContainer.gameObject;
 
             _NewTrackingList = Instantiate(_OldTrackingList);
