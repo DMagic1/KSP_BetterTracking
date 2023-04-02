@@ -156,6 +156,7 @@ namespace BetterTracking
             GameEvents.onNewVesselCreated.Remove(new EventData<Vessel>.OnEvent(OnVesselCreate));
             GameEvents.onVesselDestroy.Remove(new EventData<Vessel>.OnEvent(OnVesselDestroy));
             GameEvents.onKnowledgeChanged.Remove(new EventData<GameEvents.HostedFromToAction<IDiscoverable, DiscoveryLevels>>.OnEvent(OnKnowledgeChange));
+            GameEvents.OnMapViewFiltersModified.Remove(new EventData<MapViewFiltering.VesselTypeFilter>.OnEvent(OnMapViewFiltersModified));
         }
 
         private IEnumerator WaitForTrackingStation()
